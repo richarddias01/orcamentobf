@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerador de Orçamentos - Barbosa Assistência</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                DEFAULT: "#23394a",
+                light: "#3a5870",
+                accent: "#6ab155",
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Bibliotecas Externas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6;
+      }
+      /* Oculta o template do PDF na visualização padrão */
+      #pdf-template {
+        display: none;
+      }
+      .pdf-mode #pdf-template {
+        display: block;
+      }
+      .pdf-mode #app-container {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="text-gray-800 pb-20">
+    <!-- ========================================== -->
+    <!-- INTERFACE PRINCIPAL (UI Mobile)            -->
+    <!-- ========================================== -->
+    <div id="app-container" class="max-w-md mx-auto mt-6 px-4">
+      <!-- Cabeçalho -->
+      <header
+        class="bg-brand text-white rounded-xl p-6 shadow-lg mb-6 text-center relative"
+      >
+        <!-- NOTA: Substitua o src abaixo por 'LogoBarbosaAssistencia.png' quando for hospedar -->
+        <img
+          id="ui-logo"
+          src="img/LogoBarbosaAssistencia.webp"
+          class="h-24 mx-auto mb-4 rounded-full p-2"
+        />
+        <h1 class="text-2xl font-bold">Barbosa Assistência</h1>
+        <p class="text-gray-200 text-sm mt-1">
+          Orçamento
+          <span
+            id="ui-visor-id"
+            class="font-bold text-white bg-brand-light px-2 py-1 rounded"
+            >#0000</span
+          >
+        </p>
+
+        <div class="absolute top-4 right-4 flex gap-2">
+          <button
+            id="btn-open-history"
+            title="Histórico de Orçamentos"
+            class="bg-brand-light hover:bg-opacity-80 p-2 rounded-full transition shadow"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+          </button>
+          <button
+            id="btn-open-catalog"
+            title="Gerenciar Catálogo"
+            class="bg-brand-light hover:bg-opacity-80 p-2 rounded-full transition shadow"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 10h16M4 14h16M4 18h16"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Seção: Dados do Cliente -->
+      <section
+        class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6"
+      >
+        <h2 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">
+          Dados do Cliente
+        </h2>
+        <div class="space-y-4">
+          <div>
+            <label
+              for="input-cliente-nome"
+              class="block text-sm font-medium text-gray-600 mb-1"
+              >Nome do Cliente</label
+            >
+            <input
+              type="text"
+              id="input-cliente-nome"
+              placeholder="Ex: João da Silva"
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base"
+            />
+          </div>
+          <div>
+            <label
+              for="input-data"
+              class="block text-sm font-medium text-gray-600 mb-1"
+              >Data do Orçamento</label
+            >
+            <input
+              type="date"
+              id="input-data"
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- Seção: Adicionar Serviço -->
+      <section
+        class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6"
+      >
+        <h2 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">
+          Adicionar Serviço/Material
+        </h2>
+        <div class="space-y-4">
+          <div>
+            <input
+              list="lista-catalogo"
+              type="text"
+              id="input-item-desc"
+              placeholder="Descrição (Ex: Disjuntor 20A)"
+              class="w-full border border-gray-300 rounded-lg p-3 outline-none text-base"
+            />
+            <datalist id="lista-catalogo"></datalist>
+          </div>
+          <div class="flex gap-2">
+            <input
+              type="number"
+              id="input-item-qtd"
+              placeholder="Qtd"
+              value="1"
+              min="1"
+              class="w-1/3 border border-gray-300 rounded-lg p-3 outline-none text-base"
+            />
+            <input
+              type="number"
+              id="input-item-preco"
+              placeholder="Preço Un. (R$)"
+              class="w-2/3 border border-gray-300 rounded-lg p-3 outline-none text-base"
+            />
+          </div>
+          <button
+            id="btn-add-item"
+            class="w-full bg-brand text-white font-medium py-3 rounded-lg hover:bg-brand-light transition text-lg shadow-md"
+          >
+            + Adicionar à Lista
+          </button>
+        </div>
+      </section>
+
+      <!-- Seção: Lista de Itens & Totais -->
+      <section
+        class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6"
+      >
+        <h2 class="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">
+          Itens do Orçamento
+        </h2>
+
+        <ul
+          id="ui-lista-itens"
+          class="divide-y divide-gray-100 mb-4 empty:hidden"
+        ></ul>
+        <p id="ui-msg-vazio" class="text-sm text-gray-400 text-center italic">
+          Nenhum item adicionado ainda.
+        </p>
+
+        <div class="mt-4 pt-4 border-t">
+          <label
+            for="input-mao-obra"
+            class="block text-sm font-medium text-gray-600 mb-1"
+            >Mão de Obra / Deslocamento (R$)</label
+          >
+          <input
+            type="number"
+            id="input-mao-obra"
+            value="0"
+            class="w-full border border-gray-300 rounded-lg p-3 outline-none mb-4 text-base"
+          />
+
+          <div
+            class="flex justify-between items-center bg-gray-100 p-3 rounded-lg border border-gray-200"
+          >
+            <span class="font-semibold text-brand">Total Geral:</span>
+            <span id="ui-total-geral" class="font-bold text-xl text-brand"
+              >R$ 0,00</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- Seção: Observações -->
+      <section
+        class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6"
+      >
+        <label
+          for="input-obs"
+          class="block text-sm font-medium text-gray-600 mb-1"
+          >Observações / Garantia</label
+        >
+        <textarea
+          id="input-obs"
+          rows="2"
+          class="w-full border border-gray-300 rounded-lg p-3 outline-none text-base"
+          placeholder="Ex: Garantia de 90 dias conforme CDC."
+        >
+Garantia de 90 dias conforme CDC.</textarea
+        >
+      </section>
+
+      <!-- Ações Finais -->
+      <div class="flex gap-3 mt-8">
+        <button
+          id="btn-generate-pdf"
+          class="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl shadow hover:bg-red-700 transition flex justify-center items-center gap-2"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
+          </svg>
+          Gerar PDF
+        </button>
+        <button
+          id="btn-send-whatsapp"
+          class="flex-1 bg-green-500 text-white font-bold py-3 rounded-xl shadow hover:bg-green-600 transition flex justify-center items-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+            />
+          </svg>
+          WhatsApp
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAIS (Catálogo e Histórico)              -->
+    <!-- ========================================== -->
+    <div
+      id="modal-catalog"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center z-50 px-4"
+    >
+      <div
+        class="bg-white rounded-xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl"
+      >
+        <div class="flex justify-between items-center p-5 border-b">
+          <h2 class="text-lg font-bold text-gray-800">Catálogo de Serviços</h2>
+          <button
+            id="btn-close-catalog"
+            class="text-gray-400 hover:text-red-500 font-bold text-2xl transition"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="p-5 flex-1 overflow-y-auto">
+          <div class="flex flex-col gap-3 mb-4">
+            <input
+              type="text"
+              id="input-cat-desc"
+              placeholder="Novo Serviço/Produto"
+              class="w-full border border-gray-300 rounded-lg p-3 outline-none text-base"
+            />
+            <input
+              type="number"
+              id="input-cat-preco"
+              placeholder="Preço (R$)"
+              class="w-full border border-gray-300 rounded-lg p-3 outline-none text-base"
+            />
+          </div>
+          <button
+            id="btn-save-catalog"
+            class="w-full bg-brand text-white font-medium py-3 rounded-lg hover:bg-brand-light transition mb-6 text-lg shadow-md"
+          >
+            Salvar no Catálogo
+          </button>
+          <h3
+            class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide"
+          >
+            Itens Salvos:
+          </h3>
+          <ul
+            id="ui-lista-catalogo"
+            class="divide-y divide-gray-100 border border-gray-100 rounded-lg p-2"
+          ></ul>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modal-history"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center z-50 px-4"
+    >
+      <div
+        class="bg-white rounded-xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl"
+      >
+        <div class="flex justify-between items-center p-5 border-b">
+          <h2 class="text-lg font-bold text-gray-800">
+            Histórico de Orçamentos
+          </h2>
+          <button
+            id="btn-close-history"
+            class="text-gray-400 hover:text-red-500 font-bold text-2xl transition"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="p-5 flex-1 overflow-y-auto">
+          <p class="text-sm text-gray-500 mb-4">Seus últimos 50 orçamentos.</p>
+          <ul
+            id="ui-lista-historico"
+            class="divide-y divide-gray-100 border border-gray-100 rounded-lg p-2"
+          ></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TEMPLATE DO PDF (Motor de Renderização)    -->
+    <!-- ========================================== -->
+    <div
+      id="pdf-template"
+      class="bg-white mx-auto text-sm px-10"
+      style="width: 800px; box-sizing: border-box; position: relative"
+    >
+      <div
+        class="border-b-2 border-brand pb-3 mb-4 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-4">
+          <!-- NOTA: Substitua o src abaixo por 'LogoBarbosaAssistencia.png' -->
+          <img
+            id="pdf-logo"
+            src="img/LogoBarbosaAssistencia.webp"
+            alt="Logo"
+            class="h-16"
+          />
+          <div>
+            <h1
+              class="text-2xl font-extrabold text-brand uppercase tracking-wide"
+            >
+              Orçamento
+              <span id="pdf-id" class="text-xl text-brand-light">#0001</span>
+            </h1>
+            <h2 class="text-lg font-bold text-gray-800 mt-0">
+              Barbosa Assistência Técnica
+            </h2>
+            <p class="text-gray-500 text-xs mt-0">
+              Especializada em Elétrica e Manutenção
+            </p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-gray-600">
+            <strong>Data:</strong> <br /><span
+              id="pdf-data"
+              class="text-base font-semibold"
+              >--/--/----</span
+            >
+          </p>
+          <p class="text-xs text-gray-600 mt-1">
+            <strong>Validade:</strong> 15 dias
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200">
+        <p class="text-base text-gray-800">
+          <strong>Cliente:</strong>
+          <span id="pdf-cliente" class="uppercase font-bold"
+            >Não informado</span
+          >
+        </p>
+      </div>
+
+      <table class="w-full mb-4 text-left border-collapse">
+        <thead>
+          <tr class="bg-brand text-white">
+            <th class="py-2 px-3 font-semibold text-xs rounded-tl-lg">
+              Descrição do Serviço / Material
+            </th>
+            <th class="py-2 px-3 font-semibold text-xs text-center w-12">
+              Qtd
+            </th>
+            <th class="py-2 px-3 font-semibold text-xs text-right w-24">
+              V. Unit.
+            </th>
+            <th
+              class="py-2 px-3 font-semibold text-xs text-right w-32 rounded-tr-lg"
+            >
+              Subtotal
+            </th>
+          </tr>
+        </thead>
+        <tbody
+          id="pdf-tabela-body"
+          class="text-gray-700 border-b border-gray-200 text-sm"
+        ></tbody>
+      </table>
+
+      <!-- Adicionado break-inside-avoid para impedir corte na quebra de página -->
+      <div class="flex justify-end mb-4 break-inside-avoid">
+        <div class="w-1/2">
+          <div
+            class="flex justify-between py-1 border-b border-gray-200 text-sm"
+          >
+            <span class="text-gray-600">Mão de Obra / Deslocamento:</span>
+            <span id="pdf-mao-obra" class="font-medium">R$ 0,00</span>
+          </div>
+          <div
+            class="flex justify-between py-2 text-xl font-bold text-brand border-b-2 border-brand"
+          >
+            <span>TOTAL GERAL:</span>
+            <span id="pdf-total-geral">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adicionado break-inside-avoid -->
+      <div
+        class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4 flex items-center justify-between break-inside-avoid"
+      >
+        <div>
+          <h3 class="font-bold text-brand mb-1 text-base">
+            💳 Formas de Pagamento
+          </h3>
+          <p class="text-gray-600 text-xs mb-2">
+            Pague via PIX para agilizar o atendimento.
+          </p>
+          <p class="text-gray-800 text-sm mt-1">
+            <strong id="pdf-pix-phone">Chave PIX (Celular): --</strong>
+          </p>
+          <p class="text-gray-800 text-sm">
+            <strong id="pdf-pix-name">Nome: --</strong>
+          </p>
+          <p class="text-gray-800 text-sm">
+            <strong id="pdf-pix-bank">Banco: --</strong>
+          </p>
+        </div>
+        <div class="bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+          <!-- NOTA: Substitua o src abaixo por 'qrcode-pix.png' -->
+          <img
+            id="pdf-qr"
+            src="img/qrcode-pix.png"
+            alt="QR Code PIX"
+            class="w-20 h-20 object-contain"
+          />
+        </div>
+      </div>
+
+      <!-- Adicionado break-inside-avoid -->
+      <div class="mb-4 break-inside-avoid">
+        <h3 class="font-bold text-gray-800 mb-1 text-sm">Observações:</h3>
+        <p id="pdf-obs" class="text-gray-600 text-xs"></p>
+      </div>
+
+      <!-- Adicionado break-inside-avoid -->
+      <div
+        class="mt-8 pt-4 border-t-2 border-gray-800 text-center w-2/3 mx-auto flex flex-col items-center break-inside-avoid"
+      >
+        <p
+          id="pdf-assinatura-nome"
+          class="text-gray-800 font-bold text-base mb-1"
+        >
+          NOME DO CLIENTE
+        </p>
+        <p class="text-gray-500 text-xs">Assinatura / Aceite do Orçamento</p>
+        <p class="text-gray-400 text-xs mt-4 text-left w-full">
+          Data da aprovação: _____/_____/ 20____
+        </p>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT: ARQUITETURA CLEAN CODE         -->
+    <!-- ========================================== -->
+    <script>
+      /**
+       * 1. CONFIGURAÇÕES (Evita "Magic Strings")
+       */
+      const CONFIG = {
+        STORAGE: {
+          CATALOG: "barbosa_catalogo",
+          HISTORY: "barbosa_historico",
+          ID: "barbosa_orcamento_id",
+        },
+        BUSINESS: {
+          PIX_PHONE: "(44) 99999-9999",
+          PIX_NAME: "José Barbosa da Silva",
+          PIX_BANK: "Nubank",
+          MAX_HISTORY_ITEMS: 50,
+          DEFAULT_OBS: "Garantia de 90 dias conforme CDC.",
+        },
+      };
+
+      /**
+       * 2. UTILITÁRIOS E FORMATADORES
+       */
+      const Formatters = {
+        currency: (value) =>
+          new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          }).format(value || 0),
+        date: (dateStr) => {
+          if (!dateStr) return "--/--/----";
+          const parts = dateStr.split("-");
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        },
+        id: (id) => `#${String(id).padStart(4, "0")}`,
+        parseMoedaInput: (val) => parseFloat(val.replace(",", ".")) || 0,
+      };
+
+      /**
+       * 3. GERENCIADOR DE ARMAZENAMENTO (Repository Pattern)
+       */
+      const StorageManager = {
+        get: (key, defaultValue) =>
+          JSON.parse(localStorage.getItem(key)) || defaultValue,
+        set: (key, value) => localStorage.setItem(key, JSON.stringify(value)),
+        incrementId: function () {
+          const newId = this.get(CONFIG.STORAGE.ID, 1) + 1;
+          this.set(CONFIG.STORAGE.ID, newId);
+          return newId;
+        },
+      };
+
+      /**
+       * 4. ESTADO DA APLICAÇÃO (State Management)
+       */
+      const State = {
+        items: [],
+        catalog: StorageManager.get(CONFIG.STORAGE.CATALOG, []),
+        history: StorageManager.get(CONFIG.STORAGE.HISTORY, []),
+        currentId: StorageManager.get(CONFIG.STORAGE.ID, 1),
+
+        get totalGeral() {
+          const sumItems = this.items.reduce(
+            (acc, item) => acc + item.subtotal,
+            0,
+          );
+          const maoObra = Formatters.parseMoedaInput(
+            document.getElementById("input-mao-obra").value,
+          );
+          return sumItems + maoObra;
+        },
+
+        addItem(desc, qtd, preco) {
+          this.items.push({
+            id: Date.now(),
+            desc,
+            qtd,
+            preco,
+            subtotal: qtd * preco,
+          });
+        },
+
+        removeItem(id) {
+          this.items = this.items.filter((item) => item.id !== id);
+        },
+
+        saveCatalogItem(desc, preco) {
+          this.catalog.push({ id: Date.now(), desc, preco });
+          StorageManager.set(CONFIG.STORAGE.CATALOG, this.catalog);
+        },
+
+        removeCatalogItem(id) {
+          this.catalog = this.catalog.filter((c) => c.id !== id);
+          StorageManager.set(CONFIG.STORAGE.CATALOG, this.catalog);
+        },
+
+        saveHistory(cliente, dataStr, maoObra, obs) {
+          const record = {
+            id: this.currentId,
+            cliente: cliente || "Cliente não informado",
+            data: dataStr,
+            itens: JSON.parse(JSON.stringify(this.items)), // Deep copy
+            maoObra: maoObra,
+            totalGeral: this.totalGeral,
+            obs: obs,
+          };
+
+          const index = this.history.findIndex((h) => h.id === this.currentId);
+          if (index >= 0) this.history[index] = record;
+          else this.history.unshift(record);
+
+          if (this.history.length > CONFIG.BUSINESS.MAX_HISTORY_ITEMS)
+            this.history.pop();
+          StorageManager.set(CONFIG.STORAGE.HISTORY, this.history);
+        },
+
+        advanceId() {
+          this.currentId = StorageManager.incrementId();
+        },
+      };
+
+      /**
+       * 5. MANIPULAÇÃO DA INTERFACE (UI Controller)
+       */
+      const UI = {
+        elements: {
+          dateInput: document.getElementById("input-data"),
+          visorId: document.getElementById("ui-visor-id"),
+          totalGeral: document.getElementById("ui-total-geral"),
+          listaItens: document.getElementById("ui-lista-itens"),
+          msgVazio: document.getElementById("ui-msg-vazio"),
+          listaCatalogo: document.getElementById("lista-catalogo"),
+          listaCatalogoModal: document.getElementById("ui-lista-catalogo"),
+          listaHistoricoModal: document.getElementById("ui-lista-historico"),
+          modals: {
+            catalog: document.getElementById("modal-catalog"),
+            history: document.getElementById("modal-history"),
+          },
+        },
+
+        init() {
+          this.elements.dateInput.valueAsDate = new Date();
+          this.updateVisorId();
+          this.renderCatalog();
+          this.renderHistory();
+          this.setupBusinessData();
+        },
+
+        setupBusinessData() {
+          document.getElementById("pdf-pix-phone").innerText =
+            `Chave PIX (Celular): ${CONFIG.BUSINESS.PIX_PHONE}`;
+          document.getElementById("pdf-pix-name").innerText =
+            `Nome: ${CONFIG.BUSINESS.PIX_NAME}`;
+          document.getElementById("pdf-pix-bank").innerText =
+            `Banco: ${CONFIG.BUSINESS.PIX_BANK}`;
+          document.getElementById("input-obs").value =
+            CONFIG.BUSINESS.DEFAULT_OBS;
+        },
+
+        updateVisorId() {
+          this.elements.visorId.innerText = Formatters.id(State.currentId);
+        },
+
+        updateTotals() {
+          this.elements.totalGeral.innerText = Formatters.currency(
+            State.totalGeral,
+          );
+        },
+
+        renderItems() {
+          this.elements.listaItens.innerHTML = "";
+          this.elements.msgVazio.style.display =
+            State.items.length === 0 ? "block" : "none";
+
+          State.items.forEach((item) => {
+            const li = document.createElement("li");
+            li.className = "py-3 flex justify-between items-center";
+            li.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800">${item.desc}</p>
+                            <p class="text-sm text-gray-500">${item.qtd}x ${Formatters.currency(item.preco)}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-semibold text-gray-700">${Formatters.currency(item.subtotal)}</span>
+                            <button class="btn-remove-item text-red-500 hover:text-red-700 p-1" data-id="${item.id}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    `;
+            this.elements.listaItens.appendChild(li);
+          });
+
+          // Attach events dynamically for created buttons
+          document.querySelectorAll(".btn-remove-item").forEach((btn) => {
+            btn.addEventListener("click", (e) =>
+              App.removeItem(Number(e.currentTarget.dataset.id)),
+            );
+          });
+
+          this.updateTotals();
+        },
+
+        renderCatalog() {
+          this.elements.listaCatalogo.innerHTML = "";
+          this.elements.listaCatalogoModal.innerHTML = "";
+
+          if (State.catalog.length === 0) {
+            this.elements.listaCatalogoModal.innerHTML =
+              '<li class="text-gray-400 text-sm italic py-2 text-center">Nenhum item salvo.</li>';
+          }
+
+          State.catalog.forEach((c) => {
+            // Datalist
+            const option = document.createElement("option");
+            option.value = c.desc;
+            this.elements.listaCatalogo.appendChild(option);
+
+            // Modal List
+            const li = document.createElement("li");
+            li.className = "py-2 flex justify-between items-center text-sm";
+            li.innerHTML = `
+                        <span class="text-gray-700 font-medium">${c.desc} <b class="text-blue-600">(${Formatters.currency(c.preco)})</b></span>
+                        <button class="btn-remove-catalog text-red-500 font-bold hover:text-red-700 bg-red-50 w-6 h-6 rounded" data-id="${c.id}">&times;</button>
+                    `;
+            this.elements.listaCatalogoModal.appendChild(li);
+          });
+
+          document.querySelectorAll(".btn-remove-catalog").forEach((btn) => {
+            btn.addEventListener("click", (e) =>
+              App.removeCatalogItem(Number(e.currentTarget.dataset.id)),
+            );
+          });
+        },
+
+        renderHistory() {
+          this.elements.listaHistoricoModal.innerHTML = "";
+
+          if (State.history.length === 0) {
+            this.elements.listaHistoricoModal.innerHTML =
+              '<li class="text-gray-400 text-sm italic py-4 text-center">Nenhum orçamento gerado ainda.</li>';
+            return;
+          }
+
+          State.history.forEach((orc) => {
+            const li = document.createElement("li");
+            li.className = "py-3 flex flex-col gap-2 border-b last:border-0";
+            li.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="font-bold text-brand">${Formatters.id(orc.id)}</span>
+                                <p class="text-sm font-medium text-gray-800">${orc.cliente}</p>
+                                <p class="text-xs text-gray-500">${Formatters.date(orc.data)}</p>
+                            </div>
+                            <span class="font-bold text-gray-700">${Formatters.currency(orc.totalGeral)}</span>
+                        </div>
+                        <div class="flex gap-2 mt-1">
+                            <button class="btn-regerar-pdf flex-1 bg-red-50 text-red-700 text-xs font-bold py-2 rounded flex justify-center gap-1 hover:bg-red-100 border border-red-200" data-id="${orc.id}">
+                                Baixar PDF Novamente
+                            </button>
+                        </div>
+                    `;
+            this.elements.listaHistoricoModal.appendChild(li);
+          });
+
+          document.querySelectorAll(".btn-regerar-pdf").forEach((btn) => {
+            btn.addEventListener("click", (e) =>
+              PDFService.generateFromHistory(
+                Number(e.currentTarget.dataset.id),
+              ),
+            );
+          });
+        },
+
+        toggleModal(modalName, show) {
+          const modal = this.elements.modals[modalName];
+          if (show) modal.classList.remove("hidden");
+          else modal.classList.add("hidden");
+        },
+
+        clearItemInputs() {
+          document.getElementById("input-item-desc").value = "";
+          document.getElementById("input-item-qtd").value = "1";
+          document.getElementById("input-item-preco").value = "";
+          document.getElementById("input-item-desc").focus();
+        },
+      };
+
+      /**
+       * 6. SERVIÇO DE PDF (Renderização HTML -> PDF)
+       */
+      const PDFService = {
+        injectDataToTemplate(data) {
+          document.getElementById("pdf-id").innerText = Formatters.id(data.id);
+          document.getElementById("pdf-cliente").innerText = data.cliente;
+          document.getElementById("pdf-assinatura-nome").innerText =
+            data.cliente.toUpperCase();
+          document.getElementById("pdf-data").innerText = Formatters.date(
+            data.data,
+          );
+          document.getElementById("pdf-mao-obra").innerText =
+            Formatters.currency(data.maoObra);
+          document.getElementById("pdf-total-geral").innerText =
+            Formatters.currency(data.totalGeral);
+          document.getElementById("pdf-obs").innerText = data.obs;
+
+          const tbody = document.getElementById("pdf-tabela-body");
+          tbody.innerHTML = "";
+          data.itens.forEach((item, index) => {
+            const tr = document.createElement("tr");
+            // Adiciona a quebra de proteção a cada linha da tabela
+            tr.className =
+              (index % 2 === 0 ? "bg-white" : "bg-gray-50") +
+              " break-inside-avoid";
+            tr.innerHTML = `
+                        <td class="py-2 px-3 border-b border-gray-200">${item.desc}</td>
+                        <td class="py-2 px-3 border-b border-gray-200 text-center">${item.qtd}</td>
+                        <td class="py-2 px-3 border-b border-gray-200 text-right">${Formatters.currency(item.preco)}</td>
+                        <td class="py-2 px-3 border-b border-gray-200 text-right font-medium text-gray-800">${Formatters.currency(item.subtotal)}</td>
+                    `;
+            tbody.appendChild(tr);
+          });
+        },
+
+        executePDFGeneration(fileName) {
+          const element = document.getElementById("pdf-template");
+          document.body.classList.add("pdf-mode");
+
+          const opt = {
+            margin: [15, 0, 15, 0], // Adiciona 15mm de margem superior e inferior em todas as páginas
+            filename: fileName,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+            pagebreak: { mode: ["avoid-all", "css", "legacy"] }, // Mágica: Impede fatiamento de linhas e divs!
+          };
+
+          html2pdf()
+            .set(opt)
+            .from(element)
+            .save()
+            .then(() => {
+              document.body.classList.remove("pdf-mode");
+            });
+        },
+
+        generateCurrent() {
+          if (State.items.length === 0)
+            return alert("Adicione pelo menos um serviço.");
+
+          const cliente =
+            document.getElementById("input-cliente-nome").value ||
+            "Cliente não informado";
+          const data = document.getElementById("input-data").value;
+          const maoObra = Formatters.parseMoedaInput(
+            document.getElementById("input-mao-obra").value,
+          );
+          const obs = document.getElementById("input-obs").value;
+
+          this.injectDataToTemplate({
+            id: State.currentId,
+            cliente,
+            data,
+            itens: State.items,
+            maoObra,
+            totalGeral: State.totalGeral,
+            obs,
+          });
+
+          App.saveCurrentToHistory(cliente, data, maoObra, obs);
+          this.executePDFGeneration(
+            `Orcamento_${cliente.replace(/\s+/g, "_")}.pdf`,
+          );
+          App.finishWorkflow();
+        },
+
+        generateFromHistory(id) {
+          const orc = State.history.find((h) => h.id === id);
+          if (!orc) return;
+
+          this.injectDataToTemplate(orc);
+          this.executePDFGeneration(
+            `Orcamento_${orc.cliente.replace(/\s+/g, "_")}_${Formatters.id(orc.id)}.pdf`,
+          );
+        },
+      };
+
+      /**
+       * 7. SERVIÇO DE WHATSAPP
+       */
+      const WhatsAppService = {
+        sendCurrent() {
+          if (State.items.length === 0)
+            return alert("Adicione pelo menos um serviço.");
+
+          const cliente =
+            document.getElementById("input-cliente-nome").value || "Cliente";
+          const data = document.getElementById("input-data").value;
+          const maoObra = Formatters.parseMoedaInput(
+            document.getElementById("input-mao-obra").value,
+          );
+          const obs = document.getElementById("input-obs").value;
+
+          let msg = `*🛠️ ORÇAMENTO ${Formatters.id(State.currentId)} - Barbosa Assistência*\n`;
+          msg += `Cliente: ${cliente}\n\n*Serviços:*\n`;
+          State.items.forEach(
+            (i) =>
+              (msg += `- ${i.qtd}x ${i.desc} (${Formatters.currency(i.subtotal)})\n`),
+          );
+
+          if (maoObra > 0)
+            msg += `\n*Mão de Obra/Deslocamento:* ${Formatters.currency(maoObra)}`;
+
+          msg += `\n\n💰 *TOTAL GERAL: ${Formatters.currency(State.totalGeral)}*`;
+          msg += `\n\n💳 *Chave PIX (Celular):* ${CONFIG.BUSINESS.PIX_PHONE}`;
+          msg += `\nNome: ${CONFIG.BUSINESS.PIX_NAME}\n\n_Qualquer dúvida, estou à disposição!_`;
+
+          App.saveCurrentToHistory(cliente, data, maoObra, obs);
+          window.open(
+            `https://wa.me/?text=${encodeURIComponent(msg)}`,
+            "_blank",
+          );
+          App.finishWorkflow();
+        },
+      };
+
+      /**
+       * 8. CONTROLADOR PRINCIPAL DA APLICAÇÃO (App Facade)
+       */
+      const App = {
+        init() {
+          UI.init();
+          this.bindEvents();
+        },
+
+        bindEvents() {
+          // Navegação e Modais
+          document
+            .getElementById("btn-open-catalog")
+            .addEventListener("click", () => UI.toggleModal("catalog", true));
+          document
+            .getElementById("btn-close-catalog")
+            .addEventListener("click", () => UI.toggleModal("catalog", false));
+          document
+            .getElementById("btn-open-history")
+            .addEventListener("click", () => {
+              UI.renderHistory();
+              UI.toggleModal("history", true);
+            });
+          document
+            .getElementById("btn-close-history")
+            .addEventListener("click", () => UI.toggleModal("history", false));
+
+          // Ações de Negócio
+          document
+            .getElementById("btn-add-item")
+            .addEventListener("click", () => this.addItem());
+          document
+            .getElementById("btn-save-catalog")
+            .addEventListener("click", () => this.saveCatalogItem());
+          document
+            .getElementById("btn-generate-pdf")
+            .addEventListener("click", () => PDFService.generateCurrent());
+          document
+            .getElementById("btn-send-whatsapp")
+            .addEventListener("click", () => WhatsAppService.sendCurrent());
+
+          // Interações em Tempo Real
+          document
+            .getElementById("input-mao-obra")
+            .addEventListener("input", () => UI.updateTotals());
+          document
+            .getElementById("input-item-desc")
+            .addEventListener("input", (e) =>
+              this.autoFillPrice(e.target.value),
+            );
+        },
+
+        addItem() {
+          const desc = document.getElementById("input-item-desc").value.trim();
+          const qtd = parseFloat(
+            document.getElementById("input-item-qtd").value,
+          );
+          const preco = Formatters.parseMoedaInput(
+            document.getElementById("input-item-preco").value,
+          );
+
+          if (!desc || isNaN(qtd) || isNaN(preco))
+            return alert("Preencha descrição, quantidade e preço.");
+
+          State.addItem(desc, qtd, preco);
+          UI.clearItemInputs();
+          UI.renderItems();
+        },
+
+        removeItem(id) {
+          State.removeItem(id);
+          UI.renderItems();
+        },
+
+        saveCatalogItem() {
+          const desc = document.getElementById("input-cat-desc").value.trim();
+          const preco = Formatters.parseMoedaInput(
+            document.getElementById("input-cat-preco").value,
+          );
+
+          if (!desc || isNaN(preco))
+            return alert("Preencha descrição e preço corretamente.");
+
+          State.saveCatalogItem(desc, preco);
+          document.getElementById("input-cat-desc").value = "";
+          document.getElementById("input-cat-preco").value = "";
+          UI.renderCatalog();
+        },
+
+        removeCatalogItem(id) {
+          State.removeCatalogItem(id);
+          UI.renderCatalog();
+        },
+
+        autoFillPrice(descValue) {
+          const item = State.catalog.find(
+            (c) => c.desc.toLowerCase() === descValue.toLowerCase(),
+          );
+          if (item)
+            document.getElementById("input-item-preco").value = item.preco;
+        },
+
+        saveCurrentToHistory(cliente, data, maoObra, obs) {
+          State.saveHistory(cliente, data, maoObra, obs);
+        },
+
+        finishWorkflow() {
+          State.advanceId();
+          UI.updateVisorId();
+          alert(
+            "Orçamento concluído e salvo no histórico! O rastreador foi atualizado para o próximo cliente.",
+          );
+        },
+      };
+
+      // Boot da Aplicação
+      App.init();
+    </script>
+  </body>
+</html>
