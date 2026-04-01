@@ -35,15 +35,24 @@
         font-family: "Inter", sans-serif;
         background-color: #f3f4f6;
       }
+
       /* Oculta o template do PDF na visualização padrão */
       #pdf-template {
         display: none;
       }
-      .pdf-mode #pdf-template {
-        display: block;
+
+      /* Solução Definitiva para o PDF Cortado: */
+      .pdf-mode {
+        overflow: visible !important;
       }
+      .pdf-mode #pdf-template {
+        display: block !important;
+        position: relative !important;
+        margin: 0 auto !important;
+      }
+      /* Oculta toda a interface para tirar a foto limpa */
       .pdf-mode #app-container {
-        display: none;
+        display: none !important;
       }
     </style>
   </head>
@@ -56,11 +65,15 @@
       <header
         class="bg-brand text-white rounded-xl p-6 shadow-lg mb-6 text-center relative"
       >
-        <!-- NOTA: Substitua o src abaixo por 'LogoBarbosaAssistencia.png' quando for hospedar -->
         <img
           id="ui-logo"
           src="img/LogoBarbosaAssistencia.webp"
-          class="h-24 mx-auto mb-4 rounded-full p-2"
+          onerror="
+            this.onerror = null;
+            this.src =
+              'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22 viewBox=%220 0 150 150%22%3E%3Crect width=%22150%22 height=%22150%22 rx=%2275%22 fill=%22%2323394a%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23ffffff%22 font-family=%22sans-serif%22 font-size=%2224%22 font-weight=%22bold%22%3ELogo%3C/text%3E%3C/svg%3E';
+          "
+          class="h-36 w-36 object-contain mx-auto mb-4 rounded-full p-2 bg-white/5 shadow-sm"
         />
         <h1 class="text-2xl font-bold">Barbosa Assistência</h1>
         <p class="text-gray-200 text-sm mt-1">
@@ -137,15 +150,43 @@
           </div>
           <div>
             <label
-              for="input-data"
+              for="input-cliente-tel"
               class="block text-sm font-medium text-gray-600 mb-1"
-              >Data do Orçamento</label
+              >Telefone do Cliente (Opcional)</label
             >
             <input
-              type="date"
-              id="input-data"
+              type="tel"
+              id="input-cliente-tel"
+              placeholder="Ex: (44) 99999-9999"
               class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base"
             />
+          </div>
+          <div class="flex gap-3">
+            <div class="w-1/2">
+              <label
+                for="input-data"
+                class="block text-sm font-medium text-gray-600 mb-1"
+                >Data</label
+              >
+              <input
+                type="date"
+                id="input-data"
+                class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base"
+              />
+            </div>
+            <!-- Campo de Nota Fiscal com Geração Automática -->
+            <div class="w-1/2">
+              <label
+                for="input-nf"
+                class="block text-sm font-medium text-gray-600 mb-1"
+                >Nota Fiscal</label
+              >
+              <input
+                type="text"
+                id="input-nf"
+                class="w-full border border-gray-300 bg-gray-50 rounded-lg p-3 outline-none text-base font-medium text-brand"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -158,16 +199,35 @@
           Adicionar Serviço/Material
         </h2>
         <div class="space-y-4">
-          <div>
+          <!-- NOVO: Descrição com Botão Flutuante do Catálogo -->
+          <div class="flex gap-2">
             <input
-              list="lista-catalogo"
               type="text"
               id="input-item-desc"
               placeholder="Descrição (Ex: Disjuntor 20A)"
-              class="w-full border border-gray-300 rounded-lg p-3 outline-none text-base"
+              class="flex-1 border border-gray-300 rounded-lg p-3 outline-none text-base"
             />
-            <datalist id="lista-catalogo"></datalist>
+            <button
+              id="btn-open-picker"
+              title="Escolher do Catálogo"
+              class="bg-blue-50 border border-blue-200 text-brand-light px-4 rounded-lg shadow-sm hover:bg-blue-100 transition flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
+            </button>
           </div>
+
           <div class="flex gap-2">
             <input
               type="number"
@@ -215,10 +275,11 @@
             class="block text-sm font-medium text-gray-600 mb-1"
             >Mão de Obra / Deslocamento (R$)</label
           >
+          <!-- CORREÇÃO: Removido o value="0" -->
           <input
             type="number"
             id="input-mao-obra"
-            value="0"
+            placeholder="Ex: 50,00"
             class="w-full border border-gray-300 rounded-lg p-3 outline-none mb-4 text-base"
           />
 
@@ -288,7 +349,7 @@ Garantia de 90 dias conforme CDC.</textarea
     </div>
 
     <!-- ========================================== -->
-    <!-- MODAIS (Catálogo e Histórico)              -->
+    <!-- MODAIS (Gerenciar Catálogo e Histórico)    -->
     <!-- ========================================== -->
     <div
       id="modal-catalog"
@@ -298,7 +359,7 @@ Garantia de 90 dias conforme CDC.</textarea
         class="bg-white rounded-xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl"
       >
         <div class="flex justify-between items-center p-5 border-b">
-          <h2 class="text-lg font-bold text-gray-800">Catálogo de Serviços</h2>
+          <h2 class="text-lg font-bold text-gray-800">Gerenciar Catálogo</h2>
           <button
             id="btn-close-catalog"
             class="text-gray-400 hover:text-red-500 font-bold text-2xl transition"
@@ -317,7 +378,7 @@ Garantia de 90 dias conforme CDC.</textarea
             <input
               type="number"
               id="input-cat-preco"
-              placeholder="Preço (R$)"
+              placeholder="Preço Padrão (R$)"
               class="w-full border border-gray-300 rounded-lg p-3 outline-none text-base"
             />
           </div>
@@ -368,22 +429,51 @@ Garantia de 90 dias conforme CDC.</textarea
       </div>
     </div>
 
+    <!-- NOVO MODAL: Selecionar Item do Catálogo -->
+    <div
+      id="modal-picker"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center z-50 px-4"
+    >
+      <div
+        class="bg-white rounded-xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl"
+      >
+        <div
+          class="flex justify-between items-center p-5 border-b bg-gray-50 rounded-t-xl"
+        >
+          <h2 class="text-lg font-bold text-brand">Escolher Serviço</h2>
+          <button
+            id="btn-close-picker"
+            class="text-gray-400 hover:text-red-500 font-bold text-2xl transition"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="p-3 flex-1 overflow-y-auto">
+          <ul id="ui-lista-picker" class="divide-y divide-gray-100"></ul>
+        </div>
+      </div>
+    </div>
+
     <!-- ========================================== -->
     <!-- TEMPLATE DO PDF (Motor de Renderização)    -->
     <!-- ========================================== -->
     <div
       id="pdf-template"
-      class="bg-white mx-auto text-sm px-10"
+      class="bg-white text-sm px-10"
       style="width: 800px; box-sizing: border-box; position: relative"
     >
       <div
         class="border-b-2 border-brand pb-3 mb-4 flex items-center justify-between"
       >
         <div class="flex items-center gap-4">
-          <!-- NOTA: Substitua o src abaixo por 'LogoBarbosaAssistencia.png' -->
           <img
             id="pdf-logo"
             src="img/LogoBarbosaAssistencia.webp"
+            onerror="
+              this.onerror = null;
+              this.src =
+                'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22 viewBox=%220 0 150 150%22%3E%3Crect width=%22150%22 height=%22150%22 rx=%2275%22 fill=%22%2323394a%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23ffffff%22 font-family=%22sans-serif%22 font-size=%2224%22 font-weight=%22bold%22%3ELogo%3C/text%3E%3C/svg%3E';
+            "
             alt="Logo"
             class="h-16"
           />
@@ -400,6 +490,14 @@ Garantia de 90 dias conforme CDC.</textarea
             <p class="text-gray-500 text-xs mt-0">
               Especializada em Elétrica e Manutenção
             </p>
+            <!-- NOVA INFORMAÇÃO DA EMPRESA ADICIONADA AQUI -->
+            <div class="text-gray-500 text-[10px] mt-1 leading-tight">
+              <p>
+                <strong>CNPJ:</strong> 65.434.846/0001-85 |
+                <strong>Tel:</strong> (44) 99727-9960
+              </p>
+              <p>Rua Princesa dos Campos - Campo Mourão, PR | CEP: 87310-094</p>
+            </div>
           </div>
         </div>
         <div class="text-right">
@@ -416,12 +514,19 @@ Garantia de 90 dias conforme CDC.</textarea
         </div>
       </div>
 
-      <div class="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200">
+      <!-- Box do cliente com Nota Fiscal Dinâmica -->
+      <div
+        class="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200 flex justify-between items-center"
+      >
         <p class="text-base text-gray-800">
           <strong>Cliente:</strong>
           <span id="pdf-cliente" class="uppercase font-bold"
             >Não informado</span
           >
+        </p>
+        <p id="pdf-nf-container" class="text-base text-gray-800">
+          <strong>NF:</strong>
+          <span id="pdf-nf" class="font-bold uppercase text-brand"></span>
         </p>
       </div>
 
@@ -450,7 +555,6 @@ Garantia de 90 dias conforme CDC.</textarea
         ></tbody>
       </table>
 
-      <!-- Adicionado break-inside-avoid para impedir corte na quebra de página -->
       <div class="flex justify-end mb-4 break-inside-avoid">
         <div class="w-1/2">
           <div
@@ -468,45 +572,65 @@ Garantia de 90 dias conforme CDC.</textarea
         </div>
       </div>
 
-      <!-- Adicionado break-inside-avoid -->
-      <div
-        class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4 flex items-center justify-between break-inside-avoid"
-      >
-        <div>
-          <h3 class="font-bold text-brand mb-1 text-base">
-            💳 Formas de Pagamento
-          </h3>
-          <p class="text-gray-600 text-xs mb-2">
-            Pague via PIX para agilizar o atendimento.
+      <!-- CORREÇÃO: Nova Seção Dupla de Contato e Pagamento (Stone, sem celular do dono) -->
+      <div class="flex gap-4 mb-4 break-inside-avoid">
+        <!-- Área de Contato -->
+        <div class="w-1/2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <h3 class="font-bold text-brand mb-1 text-base">👤 Contatos</h3>
+          <p class="text-gray-800 text-sm mt-2">
+            <strong>Técnico:</strong> Anderson Dias de Oliveira <br /><span
+              class="text-xs text-gray-600"
+              ><STORAG>Telefone: </STORAG>(44) 99727-9960</span
+            >
           </p>
           <p class="text-gray-800 text-sm mt-1">
-            <strong id="pdf-pix-phone">Chave PIX (Celular): --</strong>
+            <strong>Cliente:</strong>
+            <span id="pdf-cliente-contato-nome" class="font-medium">--</span>
           </p>
-          <p class="text-gray-800 text-sm">
-            <strong id="pdf-pix-name">Nome: --</strong>
-          </p>
-          <p class="text-gray-800 text-sm">
-            <strong id="pdf-pix-bank">Banco: --</strong>
+          <p class="text-gray-800 text-sm mt-1">
+            <strong>Telefone:</strong>
+            <span id="pdf-cliente-tel" class="font-medium">--</span>
           </p>
         </div>
-        <div class="bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
-          <!-- NOTA: Substitua o src abaixo por 'qrcode-pix.png' -->
-          <img
-            id="pdf-qr"
-            src="img/qrcode-pix.png"
-            alt="QR Code PIX"
-            class="w-20 h-20 object-contain"
-          />
+
+        <!-- Área de Pagamento -->
+        <div
+          class="w-1/2 bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center"
+        >
+          <div>
+            <h3 class="font-bold text-brand mb-1 text-base">
+              💳 Pagamento PIX
+            </h3>
+            <p class="text-gray-800 text-sm mt-2">
+              <strong id="pdf-pix-name">Nome: --</strong>
+            </p>
+            <p class="text-gray-800 text-sm mt-1">
+              <strong>Banco:</strong> Stone
+            </p>
+          </div>
+          <div
+            class="bg-white p-2 rounded-lg border border-gray-200 shadow-sm ml-2 shrink-0"
+          >
+            <img
+              id="pdf-qr"
+              src="img/qrcode-pix.png"
+              onerror="
+                this.onerror = null;
+                this.src =
+                  'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22 viewBox=%220 0 150 150%22%3E%3Crect width=%22150%22 height=%22150%22 fill=%22%23ffffff%22 stroke=%22%23cccccc%22 stroke-width=%224%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23000000%22 font-family=%22sans-serif%22 font-size=%2220%22 font-weight=%22bold%22%3EQR PIX%3C/text%3E%3C/svg%3E';
+              "
+              alt="QR Code PIX"
+              class="w-16 h-16 object-contain"
+            />
+          </div>
         </div>
       </div>
 
-      <!-- Adicionado break-inside-avoid -->
       <div class="mb-4 break-inside-avoid">
         <h3 class="font-bold text-gray-800 mb-1 text-sm">Observações:</h3>
         <p id="pdf-obs" class="text-gray-600 text-xs"></p>
       </div>
 
-      <!-- Adicionado break-inside-avoid -->
       <div
         class="mt-8 pt-4 border-t-2 border-gray-800 text-center w-2/3 mx-auto flex flex-col items-center break-inside-avoid"
       >
@@ -528,7 +652,7 @@ Garantia de 90 dias conforme CDC.</textarea
     <!-- ========================================== -->
     <script>
       /**
-       * 1. CONFIGURAÇÕES (Evita "Magic Strings")
+       * 1. CONFIGURAÇÕES
        */
       const CONFIG = {
         STORAGE: {
@@ -537,8 +661,9 @@ Garantia de 90 dias conforme CDC.</textarea
           ID: "barbosa_orcamento_id",
         },
         BUSINESS: {
+          OWNER_NAME: "Anderson Dias de Oliveira",
           PIX_NAME: "Anderson Dias de Oliveira",
-          PIX_BANK: "Nubank",
+          PIX_BANK: "Stone", // Atualizado para Stone
           MAX_HISTORY_ITEMS: 50,
           DEFAULT_OBS: "Garantia de 90 dias conforme CDC.",
         },
@@ -560,10 +685,14 @@ Garantia de 90 dias conforme CDC.</textarea
         },
         id: (id) => `#${String(id).padStart(4, "0")}`,
         parseMoedaInput: (val) => parseFloat(val.replace(",", ".")) || 0,
+        generateAutoNF: () => {
+          // Gera uma Nota Fiscal aleatória de 6 dígitos toda vez
+          return Math.floor(100000 + Math.random() * 900000).toString();
+        },
       };
 
       /**
-       * 3. GERENCIADOR DE ARMAZENAMENTO (Repository Pattern)
+       * 3. GERENCIADOR DE ARMAZENAMENTO
        */
       const StorageManager = {
         get: (key, defaultValue) =>
@@ -577,7 +706,7 @@ Garantia de 90 dias conforme CDC.</textarea
       };
 
       /**
-       * 4. ESTADO DA APLICAÇÃO (State Management)
+       * 4. ESTADO DA APLICAÇÃO
        */
       const State = {
         items: [],
@@ -620,12 +749,14 @@ Garantia de 90 dias conforme CDC.</textarea
           StorageManager.set(CONFIG.STORAGE.CATALOG, this.catalog);
         },
 
-        saveHistory(cliente, dataStr, maoObra, obs) {
+        saveHistory(cliente, telefone, dataStr, maoObra, obs, nf) {
           const record = {
             id: this.currentId,
             cliente: cliente || "Cliente não informado",
+            telefone: telefone || "Não informado",
+            nf: nf,
             data: dataStr,
-            itens: JSON.parse(JSON.stringify(this.items)), // Deep copy
+            itens: JSON.parse(JSON.stringify(this.items)),
             maoObra: maoObra,
             totalGeral: this.totalGeral,
             obs: obs,
@@ -646,26 +777,29 @@ Garantia de 90 dias conforme CDC.</textarea
       };
 
       /**
-       * 5. MANIPULAÇÃO DA INTERFACE (UI Controller)
+       * 5. MANIPULAÇÃO DA INTERFACE (UI)
        */
       const UI = {
         elements: {
           dateInput: document.getElementById("input-data"),
+          nfInput: document.getElementById("input-nf"),
           visorId: document.getElementById("ui-visor-id"),
           totalGeral: document.getElementById("ui-total-geral"),
           listaItens: document.getElementById("ui-lista-itens"),
           msgVazio: document.getElementById("ui-msg-vazio"),
-          listaCatalogo: document.getElementById("lista-catalogo"),
           listaCatalogoModal: document.getElementById("ui-lista-catalogo"),
+          listaPickerModal: document.getElementById("ui-lista-picker"),
           listaHistoricoModal: document.getElementById("ui-lista-historico"),
           modals: {
             catalog: document.getElementById("modal-catalog"),
             history: document.getElementById("modal-history"),
+            picker: document.getElementById("modal-picker"),
           },
         },
 
         init() {
           this.elements.dateInput.valueAsDate = new Date();
+          this.elements.nfInput.value = Formatters.generateAutoNF(); // NF Gerada automaticamente
           this.updateVisorId();
           this.renderCatalog();
           this.renderHistory();
@@ -673,12 +807,8 @@ Garantia de 90 dias conforme CDC.</textarea
         },
 
         setupBusinessData() {
-          document.getElementById("pdf-pix-phone").innerText =
-            `Chave PIX (Celular): ${CONFIG.BUSINESS.PIX_PHONE}`;
           document.getElementById("pdf-pix-name").innerText =
             `Nome: ${CONFIG.BUSINESS.PIX_NAME}`;
-          document.getElementById("pdf-pix-bank").innerText =
-            `Banco: ${CONFIG.BUSINESS.PIX_BANK}`;
           document.getElementById("input-obs").value =
             CONFIG.BUSINESS.DEFAULT_OBS;
         },
@@ -702,21 +832,20 @@ Garantia de 90 dias conforme CDC.</textarea
             const li = document.createElement("li");
             li.className = "py-3 flex justify-between items-center";
             li.innerHTML = `
-                        <div>
-                            <p class="font-medium text-gray-800">${item.desc}</p>
-                            <p class="text-sm text-gray-500">${item.qtd}x ${Formatters.currency(item.preco)}</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="font-semibold text-gray-700">${Formatters.currency(item.subtotal)}</span>
-                            <button class="btn-remove-item text-red-500 hover:text-red-700 p-1" data-id="${item.id}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </div>
-                    `;
+              <div>
+                <p class="font-medium text-gray-800">${item.desc}</p>
+                <p class="text-sm text-gray-500">${item.qtd}x ${Formatters.currency(item.preco)}</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-gray-700">${Formatters.currency(item.subtotal)}</span>
+                <button class="btn-remove-item text-red-500 hover:text-red-700 p-1" data-id="${item.id}">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+              </div>
+            `;
             this.elements.listaItens.appendChild(li);
           });
 
-          // Attach events dynamically for created buttons
           document.querySelectorAll(".btn-remove-item").forEach((btn) => {
             btn.addEventListener("click", (e) =>
               App.removeItem(Number(e.currentTarget.dataset.id)),
@@ -727,28 +856,39 @@ Garantia de 90 dias conforme CDC.</textarea
         },
 
         renderCatalog() {
-          this.elements.listaCatalogo.innerHTML = "";
           this.elements.listaCatalogoModal.innerHTML = "";
+          this.elements.listaPickerModal.innerHTML = "";
 
           if (State.catalog.length === 0) {
             this.elements.listaCatalogoModal.innerHTML =
               '<li class="text-gray-400 text-sm italic py-2 text-center">Nenhum item salvo.</li>';
+            this.elements.listaPickerModal.innerHTML =
+              '<li class="text-gray-400 text-sm italic py-8 text-center">Seu catálogo está vazio. Adicione itens no menu superior.</li>';
           }
 
           State.catalog.forEach((c) => {
-            // Datalist
-            const option = document.createElement("option");
-            option.value = c.desc;
-            this.elements.listaCatalogo.appendChild(option);
+            // Preenche o Modal de Gerenciamento
+            const liGerenciar = document.createElement("li");
+            liGerenciar.className =
+              "py-2 flex justify-between items-center text-sm";
+            liGerenciar.innerHTML = `
+              <span class="text-gray-700 font-medium">${c.desc} <b class="text-blue-600">(${Formatters.currency(c.preco)})</b></span>
+              <button class="btn-remove-catalog text-red-500 font-bold hover:text-red-700 bg-red-50 w-6 h-6 rounded" data-id="${c.id}">&times;</button>
+            `;
+            this.elements.listaCatalogoModal.appendChild(liGerenciar);
 
-            // Modal List
-            const li = document.createElement("li");
-            li.className = "py-2 flex justify-between items-center text-sm";
-            li.innerHTML = `
-                        <span class="text-gray-700 font-medium">${c.desc} <b class="text-blue-600">(${Formatters.currency(c.preco)})</b></span>
-                        <button class="btn-remove-catalog text-red-500 font-bold hover:text-red-700 bg-red-50 w-6 h-6 rounded" data-id="${c.id}">&times;</button>
-                    `;
-            this.elements.listaCatalogoModal.appendChild(li);
+            // Preenche o Modal de Seleção (Telinha Flutuante)
+            const liPicker = document.createElement("li");
+            liPicker.className =
+              "py-3 px-2 flex justify-between items-center hover:bg-blue-50 cursor-pointer rounded transition border-b border-gray-100 last:border-0";
+            liPicker.innerHTML = `
+              <span class="font-medium text-gray-700">${c.desc}</span>
+              <span class="text-brand font-bold bg-gray-100 px-2 py-1 rounded text-sm">${Formatters.currency(c.preco)}</span>
+            `;
+            liPicker.addEventListener("click", () =>
+              App.pickItemFromCatalog(c.desc, c.preco),
+            );
+            this.elements.listaPickerModal.appendChild(liPicker);
           });
 
           document.querySelectorAll(".btn-remove-catalog").forEach((btn) => {
@@ -770,21 +910,25 @@ Garantia de 90 dias conforme CDC.</textarea
           State.history.forEach((orc) => {
             const li = document.createElement("li");
             li.className = "py-3 flex flex-col gap-2 border-b last:border-0";
+            let seloNF = orc.nf
+              ? `<span class="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded border border-gray-200 ml-2">NF: ${orc.nf}</span>`
+              : "";
+
             li.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="font-bold text-brand">${Formatters.id(orc.id)}</span>
-                                <p class="text-sm font-medium text-gray-800">${orc.cliente}</p>
-                                <p class="text-xs text-gray-500">${Formatters.date(orc.data)}</p>
-                            </div>
-                            <span class="font-bold text-gray-700">${Formatters.currency(orc.totalGeral)}</span>
-                        </div>
-                        <div class="flex gap-2 mt-1">
-                            <button class="btn-regerar-pdf flex-1 bg-red-50 text-red-700 text-xs font-bold py-2 rounded flex justify-center gap-1 hover:bg-red-100 border border-red-200" data-id="${orc.id}">
-                                Baixar PDF Novamente
-                            </button>
-                        </div>
-                    `;
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="font-bold text-brand">${Formatters.id(orc.id)}</span> ${seloNF}
+                  <p class="text-sm font-medium text-gray-800 mt-1">${orc.cliente}</p>
+                  <p class="text-xs text-gray-500">${Formatters.date(orc.data)}</p>
+                </div>
+                <span class="font-bold text-gray-700">${Formatters.currency(orc.totalGeral)}</span>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <button class="btn-regerar-pdf flex-1 bg-red-50 text-red-700 text-xs font-bold py-2 rounded flex justify-center gap-1 hover:bg-red-100 border border-red-200" data-id="${orc.id}">
+                  Baixar PDF Novamente
+                </button>
+              </div>
+            `;
             this.elements.listaHistoricoModal.appendChild(li);
           });
 
@@ -807,17 +951,30 @@ Garantia de 90 dias conforme CDC.</textarea
           document.getElementById("input-item-desc").value = "";
           document.getElementById("input-item-qtd").value = "1";
           document.getElementById("input-item-preco").value = "";
-          document.getElementById("input-item-desc").focus();
+        },
+
+        resetFlow() {
+          // Limpa todos os dados para o próximo orçamento
+          State.items = [];
+          document.getElementById("input-cliente-nome").value = "";
+          document.getElementById("input-cliente-tel").value = "";
+          document.getElementById("input-mao-obra").value = "";
+          this.elements.nfInput.value = Formatters.generateAutoNF();
+          this.clearItemInputs();
+          this.renderItems();
         },
       };
 
       /**
-       * 6. SERVIÇO DE PDF (Renderização HTML -> PDF)
+       * 6. SERVIÇO DE PDF
        */
       const PDFService = {
         injectDataToTemplate(data) {
           document.getElementById("pdf-id").innerText = Formatters.id(data.id);
           document.getElementById("pdf-cliente").innerText = data.cliente;
+          document.getElementById("pdf-cliente-contato-nome").innerText =
+            data.cliente;
+          document.getElementById("pdf-cliente-tel").innerText = data.telefone;
           document.getElementById("pdf-assinatura-nome").innerText =
             data.cliente.toUpperCase();
           document.getElementById("pdf-data").innerText = Formatters.date(
@@ -828,36 +985,45 @@ Garantia de 90 dias conforme CDC.</textarea
           document.getElementById("pdf-total-geral").innerText =
             Formatters.currency(data.totalGeral);
           document.getElementById("pdf-obs").innerText = data.obs;
+          document.getElementById("pdf-nf").innerText = data.nf;
 
           const tbody = document.getElementById("pdf-tabela-body");
           tbody.innerHTML = "";
           data.itens.forEach((item, index) => {
             const tr = document.createElement("tr");
-            // Adiciona a quebra de proteção a cada linha da tabela
             tr.className =
               (index % 2 === 0 ? "bg-white" : "bg-gray-50") +
               " break-inside-avoid";
             tr.innerHTML = `
-                        <td class="py-2 px-3 border-b border-gray-200">${item.desc}</td>
-                        <td class="py-2 px-3 border-b border-gray-200 text-center">${item.qtd}</td>
-                        <td class="py-2 px-3 border-b border-gray-200 text-right">${Formatters.currency(item.preco)}</td>
-                        <td class="py-2 px-3 border-b border-gray-200 text-right font-medium text-gray-800">${Formatters.currency(item.subtotal)}</td>
-                    `;
+              <td class="py-2 px-3 border-b border-gray-200">${item.desc}</td>
+              <td class="py-2 px-3 border-b border-gray-200 text-center">${item.qtd}</td>
+              <td class="py-2 px-3 border-b border-gray-200 text-right">${Formatters.currency(item.preco)}</td>
+              <td class="py-2 px-3 border-b border-gray-200 text-right font-medium text-gray-800">${Formatters.currency(item.subtotal)}</td>
+            `;
             tbody.appendChild(tr);
           });
         },
 
         executePDFGeneration(fileName) {
+          // CORREÇÃO: Sobe a tela para o topo antes de tirar a "foto" para evitar cortes no PC/iPhone
+          window.scrollTo(0, 0);
+
           const element = document.getElementById("pdf-template");
           document.body.classList.add("pdf-mode");
 
           const opt = {
-            margin: [15, 0, 15, 0], // Adiciona 15mm de margem superior e inferior em todas as páginas
+            margin: [15, 0, 15, 0],
             filename: fileName,
             image: { type: "jpeg", quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+            html2canvas: {
+              scale: 2,
+              useCORS: true,
+              windowWidth: 800,
+              scrollX: 0,
+              scrollY: 0,
+            },
             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-            pagebreak: { mode: ["avoid-all", "css", "legacy"] }, // Mágica: Impede fatiamento de linhas e divs!
+            pagebreak: { mode: ["avoid-all", "css", "legacy"] },
           };
 
           html2pdf()
@@ -876,15 +1042,21 @@ Garantia de 90 dias conforme CDC.</textarea
           const cliente =
             document.getElementById("input-cliente-nome").value ||
             "Cliente não informado";
+          const telefone =
+            document.getElementById("input-cliente-tel").value ||
+            "Não informado";
           const data = document.getElementById("input-data").value;
           const maoObra = Formatters.parseMoedaInput(
             document.getElementById("input-mao-obra").value,
           );
           const obs = document.getElementById("input-obs").value;
+          const nf = document.getElementById("input-nf").value.trim();
 
           this.injectDataToTemplate({
             id: State.currentId,
             cliente,
+            telefone,
+            nf,
             data,
             itens: State.items,
             maoObra,
@@ -892,7 +1064,7 @@ Garantia de 90 dias conforme CDC.</textarea
             obs,
           });
 
-          App.saveCurrentToHistory(cliente, data, maoObra, obs);
+          App.saveCurrentToHistory(cliente, telefone, data, maoObra, obs, nf);
           this.executePDFGeneration(
             `Orcamento_${cliente.replace(/\s+/g, "_")}.pdf`,
           );
@@ -920,14 +1092,21 @@ Garantia de 90 dias conforme CDC.</textarea
 
           const cliente =
             document.getElementById("input-cliente-nome").value || "Cliente";
+          const telefone =
+            document.getElementById("input-cliente-tel").value ||
+            "Não informado";
           const data = document.getElementById("input-data").value;
           const maoObra = Formatters.parseMoedaInput(
             document.getElementById("input-mao-obra").value,
           );
           const obs = document.getElementById("input-obs").value;
+          const nf = document.getElementById("input-nf").value.trim();
 
           let msg = `*🛠️ ORÇAMENTO ${Formatters.id(State.currentId)} - Barbosa Assistência*\n`;
-          msg += `Cliente: ${cliente}\n\n*Serviços:*\n`;
+          msg += `Cliente: ${cliente}\n`;
+          if (nf) msg += `Nota Fiscal: ${nf}\n`;
+          msg += `\n*Serviços:*\n`;
+
           State.items.forEach(
             (i) =>
               (msg += `- ${i.qtd}x ${i.desc} (${Formatters.currency(i.subtotal)})\n`),
@@ -937,10 +1116,10 @@ Garantia de 90 dias conforme CDC.</textarea
             msg += `\n*Mão de Obra/Deslocamento:* ${Formatters.currency(maoObra)}`;
 
           msg += `\n\n💰 *TOTAL GERAL: ${Formatters.currency(State.totalGeral)}*`;
-          msg += `\n\n💳 *Chave PIX (Celular):* ${CONFIG.BUSINESS.PIX_PHONE}`;
-          msg += `\nNome: ${CONFIG.BUSINESS.PIX_NAME}\n\n_Qualquer dúvida, estou à disposição!_`;
+          msg += `\n\n💳 *Pagamento PIX:*\nNome: ${CONFIG.BUSINESS.PIX_NAME}\nBanco: ${CONFIG.BUSINESS.PIX_BANK}`;
+          msg += `\n\n_Qualquer dúvida, estou à disposição!_`;
 
-          App.saveCurrentToHistory(cliente, data, maoObra, obs);
+          App.saveCurrentToHistory(cliente, telefone, data, maoObra, obs, nf);
           window.open(
             `https://wa.me/?text=${encodeURIComponent(msg)}`,
             "_blank",
@@ -950,7 +1129,7 @@ Garantia de 90 dias conforme CDC.</textarea
       };
 
       /**
-       * 8. CONTROLADOR PRINCIPAL DA APLICAÇÃO (App Facade)
+       * 8. CONTROLADOR PRINCIPAL
        */
       const App = {
         init() {
@@ -959,13 +1138,18 @@ Garantia de 90 dias conforme CDC.</textarea
         },
 
         bindEvents() {
-          // Navegação e Modais
           document
             .getElementById("btn-open-catalog")
             .addEventListener("click", () => UI.toggleModal("catalog", true));
           document
             .getElementById("btn-close-catalog")
             .addEventListener("click", () => UI.toggleModal("catalog", false));
+          document
+            .getElementById("btn-open-picker")
+            .addEventListener("click", () => UI.toggleModal("picker", true));
+          document
+            .getElementById("btn-close-picker")
+            .addEventListener("click", () => UI.toggleModal("picker", false));
           document
             .getElementById("btn-open-history")
             .addEventListener("click", () => {
@@ -976,7 +1160,6 @@ Garantia de 90 dias conforme CDC.</textarea
             .getElementById("btn-close-history")
             .addEventListener("click", () => UI.toggleModal("history", false));
 
-          // Ações de Negócio
           document
             .getElementById("btn-add-item")
             .addEventListener("click", () => this.addItem());
@@ -990,15 +1173,9 @@ Garantia de 90 dias conforme CDC.</textarea
             .getElementById("btn-send-whatsapp")
             .addEventListener("click", () => WhatsAppService.sendCurrent());
 
-          // Interações em Tempo Real
           document
             .getElementById("input-mao-obra")
             .addEventListener("input", () => UI.updateTotals());
-          document
-            .getElementById("input-item-desc")
-            .addEventListener("input", (e) =>
-              this.autoFillPrice(e.target.value),
-            );
         },
 
         addItem() {
@@ -1043,23 +1220,22 @@ Garantia de 90 dias conforme CDC.</textarea
           UI.renderCatalog();
         },
 
-        autoFillPrice(descValue) {
-          const item = State.catalog.find(
-            (c) => c.desc.toLowerCase() === descValue.toLowerCase(),
-          );
-          if (item)
-            document.getElementById("input-item-preco").value = item.preco;
+        pickItemFromCatalog(desc, preco) {
+          document.getElementById("input-item-desc").value = desc;
+          document.getElementById("input-item-preco").value = preco;
+          UI.toggleModal("picker", false);
         },
 
-        saveCurrentToHistory(cliente, data, maoObra, obs) {
-          State.saveHistory(cliente, data, maoObra, obs);
+        saveCurrentToHistory(cliente, telefone, data, maoObra, obs, nf) {
+          State.saveHistory(cliente, telefone, data, maoObra, obs, nf);
         },
 
         finishWorkflow() {
           State.advanceId();
+          UI.resetFlow();
           UI.updateVisorId();
           alert(
-            "Orçamento concluído e salvo no histórico! O rastreador foi atualizado para o próximo cliente.",
+            "Orçamento concluído e salvo no histórico! A tela foi limpa para o próximo cliente.",
           );
         },
       };
