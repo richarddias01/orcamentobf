@@ -25,8 +25,10 @@
 
     <!-- Bibliotecas Externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Fontes: Inter (Textos) e Dancing Script (Assinatura) -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@700&display=swap"
       rel="stylesheet"
     />
 
@@ -36,21 +38,30 @@
         background-color: #f3f4f6;
       }
 
-      /* Oculta o template do PDF na visualização padrão */
-      #pdf-template {
+      /* Oculta os templates de PDF na visualização padrão da tela */
+      #pdf-template-orcamento,
+      #pdf-template-recibo {
         display: none;
       }
 
-      /* Solução Definitiva para o PDF Cortado: */
+      /* Lógica de exibição isolada para o PDF na hora de tirar a foto */
       .pdf-mode {
         overflow: visible !important;
       }
-      .pdf-mode #pdf-template {
+
+      .pdf-mode-orcamento #pdf-template-orcamento {
         display: block !important;
         position: relative !important;
         margin: 0 auto !important;
       }
-      /* Oculta toda a interface para tirar a foto limpa */
+
+      .pdf-mode-recibo #pdf-template-recibo {
+        display: block !important;
+        position: relative !important;
+        margin: 0 auto !important;
+      }
+
+      /* Oculta toda a interface do app para tirar a foto limpa */
       .pdf-mode #app-container {
         display: none !important;
       }
@@ -77,7 +88,7 @@
         />
         <h1 class="text-2xl font-bold">Barbosa Assistência</h1>
         <p class="text-gray-200 text-sm mt-1">
-          Orçamento
+          Doc. Nº
           <span
             id="ui-visor-id"
             class="font-bold text-white bg-brand-light px-2 py-1 rounded"
@@ -174,12 +185,11 @@
                 class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base"
               />
             </div>
-            <!-- Campo de Nota Fiscal com Geração Automática -->
             <div class="w-1/2">
               <label
                 for="input-nf"
                 class="block text-sm font-medium text-gray-600 mb-1"
-                >Nota Fiscal</label
+                >Nota Fiscal (Opc)</label
               >
               <input
                 type="text"
@@ -199,7 +209,6 @@
           Adicionar Serviço/Material
         </h2>
         <div class="space-y-4">
-          <!-- NOVO: Descrição com Botão Flutuante do Catálogo -->
           <div class="flex gap-2">
             <input
               type="text"
@@ -227,7 +236,6 @@
               </svg>
             </button>
           </div>
-
           <div class="flex gap-2">
             <input
               type="number"
@@ -258,9 +266,8 @@
         class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6"
       >
         <h2 class="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">
-          Itens do Orçamento
+          Itens do Documento
         </h2>
-
         <ul
           id="ui-lista-itens"
           class="divide-y divide-gray-100 mb-4 empty:hidden"
@@ -268,21 +275,18 @@
         <p id="ui-msg-vazio" class="text-sm text-gray-400 text-center italic">
           Nenhum item adicionado ainda.
         </p>
-
         <div class="mt-4 pt-4 border-t">
           <label
             for="input-mao-obra"
             class="block text-sm font-medium text-gray-600 mb-1"
             >Mão de Obra / Deslocamento (R$)</label
           >
-          <!-- CORREÇÃO: Removido o value="0" -->
           <input
             type="number"
             id="input-mao-obra"
             placeholder="Ex: 50,00"
             class="w-full border border-gray-300 rounded-lg p-3 outline-none mb-4 text-base"
           />
-
           <div
             class="flex justify-between items-center bg-gray-100 p-3 rounded-lg border border-gray-200"
           >
@@ -313,8 +317,39 @@ Garantia de 90 dias conforme CDC.</textarea
         >
       </section>
 
-      <!-- Ações Finais -->
-      <div class="flex gap-3 mt-8">
+      <!-- ========================================== -->
+      <!-- TIPO DE DOCUMENTO E BOTÕES DE AÇÃO         -->
+      <!-- ========================================== -->
+      <div
+        class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4 flex justify-between items-center"
+      >
+        <span class="font-bold text-gray-700 text-sm"
+          >Gerar Documento como:</span
+        >
+        <div class="flex gap-4">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="radio"
+              name="doc_type"
+              value="orcamento"
+              checked
+              class="w-5 h-5 text-brand focus:ring-brand accent-brand"
+            />
+            <span class="text-gray-800 font-medium">Orçamento</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="radio"
+              name="doc_type"
+              value="recibo"
+              class="w-5 h-5 text-brand focus:ring-brand accent-brand"
+            />
+            <span class="text-gray-800 font-medium">Recibo</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mb-8">
         <button
           id="btn-generate-pdf"
           class="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl shadow hover:bg-red-700 transition flex justify-center items-center gap-2"
@@ -349,7 +384,7 @@ Garantia de 90 dias conforme CDC.</textarea
     </div>
 
     <!-- ========================================== -->
-    <!-- MODAIS (Gerenciar Catálogo e Histórico)    -->
+    <!-- MODAIS (Catálogo, Histórico, Picker)       -->
     <!-- ========================================== -->
     <div
       id="modal-catalog"
@@ -410,7 +445,7 @@ Garantia de 90 dias conforme CDC.</textarea
       >
         <div class="flex justify-between items-center p-5 border-b">
           <h2 class="text-lg font-bold text-gray-800">
-            Histórico de Orçamentos
+            Histórico de Documentos
           </h2>
           <button
             id="btn-close-history"
@@ -420,7 +455,9 @@ Garantia de 90 dias conforme CDC.</textarea
           </button>
         </div>
         <div class="p-5 flex-1 overflow-y-auto">
-          <p class="text-sm text-gray-500 mb-4">Seus últimos 50 orçamentos.</p>
+          <p class="text-sm text-gray-500 mb-4">
+            Acesse ou regenere os últimos 50 serviços.
+          </p>
           <ul
             id="ui-lista-historico"
             class="divide-y divide-gray-100 border border-gray-100 rounded-lg p-2"
@@ -429,7 +466,6 @@ Garantia de 90 dias conforme CDC.</textarea
       </div>
     </div>
 
-    <!-- NOVO MODAL: Selecionar Item do Catálogo -->
     <div
       id="modal-picker"
       class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center z-50 px-4"
@@ -455,19 +491,19 @@ Garantia de 90 dias conforme CDC.</textarea
     </div>
 
     <!-- ========================================== -->
-    <!-- TEMPLATE DO PDF (Motor de Renderização)    -->
+    <!-- TEMPLATE DO PDF 1: ORÇAMENTO               -->
     <!-- ========================================== -->
     <div
-      id="pdf-template"
-      class="bg-white text-sm px-10"
+      id="pdf-template-orcamento"
+      class="bg-white text-sm px-8 py-4"
       style="width: 800px; box-sizing: border-box; position: relative"
     >
       <div
-        class="border-b-2 border-brand pb-3 mb-4 flex items-center justify-between"
+        class="border-b-2 border-brand pb-2 mb-3 flex items-center justify-between"
       >
         <div class="flex items-center gap-4">
           <img
-            id="pdf-logo"
+            id="pdf-orc-logo"
             src="img/LogoBarbosaAssistencia.webp"
             onerror="
               this.onerror = null;
@@ -482,7 +518,9 @@ Garantia de 90 dias conforme CDC.</textarea
               class="text-2xl font-extrabold text-brand uppercase tracking-wide"
             >
               Orçamento
-              <span id="pdf-id" class="text-xl text-brand-light">#0001</span>
+              <span id="pdf-orc-id" class="text-xl text-brand-light"
+                >#0001</span
+              >
             </h1>
             <h2 class="text-lg font-bold text-gray-800 mt-0">
               Barbosa Assistência Técnica
@@ -490,11 +528,10 @@ Garantia de 90 dias conforme CDC.</textarea
             <p class="text-gray-500 text-xs mt-0">
               Especializada em Elétrica e Manutenção
             </p>
-            <!-- NOVA INFORMAÇÃO DA EMPRESA ADICIONADA AQUI -->
             <div class="text-gray-500 text-[10px] mt-1 leading-tight">
               <p>
                 <strong>CNPJ:</strong> 65.434.846/0001-85 |
-                <strong>Tel:</strong> (44) 99727-9960
+                <strong>Tel:</strong> (44) 9 9727-9960
               </p>
               <p>Rua Princesa dos Campos - Campo Mourão, PR | CEP: 87310-094</p>
             </div>
@@ -503,7 +540,7 @@ Garantia de 90 dias conforme CDC.</textarea
         <div class="text-right">
           <p class="text-xs text-gray-600">
             <strong>Data:</strong> <br /><span
-              id="pdf-data"
+              id="pdf-orc-data"
               class="text-base font-semibold"
               >--/--/----</span
             >
@@ -514,23 +551,22 @@ Garantia de 90 dias conforme CDC.</textarea
         </div>
       </div>
 
-      <!-- Box do cliente com Nota Fiscal Dinâmica -->
       <div
-        class="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200 flex justify-between items-center"
+        class="bg-gray-50 p-2 rounded-lg mb-3 border border-gray-200 flex justify-between items-center"
       >
         <p class="text-base text-gray-800">
           <strong>Cliente:</strong>
-          <span id="pdf-cliente" class="uppercase font-bold"
+          <span id="pdf-orc-cliente" class="uppercase font-bold"
             >Não informado</span
           >
         </p>
-        <p id="pdf-nf-container" class="text-base text-gray-800">
+        <p id="pdf-orc-nf-container" class="text-base text-gray-800">
           <strong>NF:</strong>
-          <span id="pdf-nf" class="font-bold uppercase text-brand"></span>
+          <span id="pdf-orc-nf" class="font-bold uppercase text-brand"></span>
         </p>
       </div>
 
-      <table class="w-full mb-4 text-left border-collapse">
+      <table class="w-full mb-3 text-left border-collapse">
         <thead>
           <tr class="bg-brand text-white">
             <th class="py-2 px-3 font-semibold text-xs rounded-tl-lg">
@@ -550,59 +586,57 @@ Garantia de 90 dias conforme CDC.</textarea
           </tr>
         </thead>
         <tbody
-          id="pdf-tabela-body"
+          id="pdf-orc-tabela-body"
           class="text-gray-700 border-b border-gray-200 text-sm"
         ></tbody>
       </table>
 
-      <div class="flex justify-end mb-4 break-inside-avoid">
+      <div class="flex justify-end mb-3 break-inside-avoid">
         <div class="w-1/2">
           <div
             class="flex justify-between py-1 border-b border-gray-200 text-sm"
           >
             <span class="text-gray-600">Mão de Obra / Deslocamento:</span>
-            <span id="pdf-mao-obra" class="font-medium">R$ 0,00</span>
+            <span id="pdf-orc-mao-obra" class="font-medium">R$ 0,00</span>
           </div>
           <div
             class="flex justify-between py-2 text-xl font-bold text-brand border-b-2 border-brand"
           >
             <span>TOTAL GERAL:</span>
-            <span id="pdf-total-geral">R$ 0,00</span>
+            <span id="pdf-orc-total-geral">R$ 0,00</span>
           </div>
         </div>
       </div>
 
-      <!-- CORREÇÃO: Nova Seção Dupla de Contato e Pagamento (Stone, sem celular do dono) -->
-      <div class="flex gap-4 mb-4 break-inside-avoid">
-        <!-- Área de Contato -->
-        <div class="w-1/2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <div class="flex gap-4 mb-3 break-inside-avoid">
+        <div class="w-1/2 bg-gray-50 p-3 rounded-lg border border-gray-200">
           <h3 class="font-bold text-brand mb-1 text-base">👤 Contatos</h3>
-          <p class="text-gray-800 text-sm mt-2">
+          <p class="text-gray-800 text-sm mt-1">
             <strong>Técnico:</strong> Anderson Dias de Oliveira <br /><span
               class="text-xs text-gray-600"
-              ><STORAG>Telefone: </STORAG>(44) 99727-9960</span
+              >(44) 9 9727-9960</span
             >
           </p>
           <p class="text-gray-800 text-sm mt-1">
             <strong>Cliente:</strong>
-            <span id="pdf-cliente-contato-nome" class="font-medium">--</span>
+            <span id="pdf-orc-cliente-contato-nome" class="font-medium"
+              >--</span
+            >
           </p>
           <p class="text-gray-800 text-sm mt-1">
             <strong>Telefone:</strong>
-            <span id="pdf-cliente-tel" class="font-medium">--</span>
+            <span id="pdf-orc-cliente-tel" class="font-medium">--</span>
           </p>
         </div>
-
-        <!-- Área de Pagamento -->
         <div
-          class="w-1/2 bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center"
+          class="w-1/2 bg-gray-50 p-3 rounded-lg border border-gray-200 flex justify-between items-center"
         >
           <div>
             <h3 class="font-bold text-brand mb-1 text-base">
               💳 Pagamento PIX
             </h3>
-            <p class="text-gray-800 text-sm mt-2">
-              <strong id="pdf-pix-name">Nome: --</strong>
+            <p class="text-gray-800 text-sm mt-1">
+              <strong id="pdf-orc-pix-name">Nome: --</strong>
             </p>
             <p class="text-gray-800 text-sm mt-1">
               <strong>Banco:</strong> Stone
@@ -612,38 +646,185 @@ Garantia de 90 dias conforme CDC.</textarea
             class="bg-white p-2 rounded-lg border border-gray-200 shadow-sm ml-2 shrink-0"
           >
             <img
-              id="pdf-qr"
               src="img/qrcode-pix.png"
               onerror="
                 this.onerror = null;
                 this.src =
                   'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22 viewBox=%220 0 150 150%22%3E%3Crect width=%22150%22 height=%22150%22 fill=%22%23ffffff%22 stroke=%22%23cccccc%22 stroke-width=%224%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23000000%22 font-family=%22sans-serif%22 font-size=%2220%22 font-weight=%22bold%22%3EQR PIX%3C/text%3E%3C/svg%3E';
               "
-              alt="QR Code PIX"
+              alt="QR Code"
               class="w-16 h-16 object-contain"
             />
           </div>
         </div>
       </div>
 
-      <div class="mb-4 break-inside-avoid">
+      <div class="mb-3 break-inside-avoid">
         <h3 class="font-bold text-gray-800 mb-1 text-sm">Observações:</h3>
-        <p id="pdf-obs" class="text-gray-600 text-xs"></p>
+        <p id="pdf-orc-obs" class="text-gray-600 text-xs"></p>
       </div>
 
       <div
-        class="mt-8 pt-4 border-t-2 border-gray-800 text-center w-2/3 mx-auto flex flex-col items-center break-inside-avoid"
+        class="mt-6 pt-3 border-t-2 border-gray-800 text-center w-2/3 mx-auto flex flex-col items-center break-inside-avoid"
       >
         <p
-          id="pdf-assinatura-nome"
+          id="pdf-orc-assinatura-nome"
           class="text-gray-800 font-bold text-base mb-1"
         >
           NOME DO CLIENTE
         </p>
         <p class="text-gray-500 text-xs">Assinatura / Aceite do Orçamento</p>
-        <p class="text-gray-400 text-xs mt-4 text-left w-full">
+        <p class="text-gray-400 text-xs mt-3 text-left w-full">
           Data da aprovação: _____/_____/ 20____
         </p>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TEMPLATE DO PDF 2: RECIBO OFICIAL          -->
+    <!-- ========================================== -->
+    <div
+      id="pdf-template-recibo"
+      class="bg-white text-sm px-8 py-3"
+      style="width: 800px; box-sizing: border-box; position: relative"
+    >
+      <!-- HEADER DO RECIBO -->
+      <div class="flex justify-between items-start mb-4">
+        <img
+          src="img/LogoBarbosaAssistencia.webp"
+          onerror="
+            this.onerror = null;
+            this.src =
+              'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22 viewBox=%220 0 150 150%22%3E%3Crect width=%22150%22 height=%22150%22 rx=%2275%22 fill=%22%2323394a%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23ffffff%22 font-family=%22sans-serif%22 font-size=%2224%22 font-weight=%22bold%22%3ELogo%3C/text%3E%3C/svg%3E';
+          "
+          alt="Logo"
+          class="h-20"
+        />
+        <div class="text-right">
+          <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Recibo</h1>
+          <p class="text-sm text-gray-800 font-medium">
+            Nº do Documento
+            <span class="ml-4 font-normal" id="pdf-rec-id">000000</span>
+          </p>
+          <p class="text-sm text-gray-800 font-medium">
+            Data do Recibo
+            <span class="ml-4 font-normal" id="pdf-rec-data">--/--/----</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- DADOS DAS PARTES -->
+      <div
+        class="flex justify-between items-end mb-4 border-b-2 border-gray-800 pb-3"
+      >
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 leading-tight">
+            Barbosa assistência técnica
+          </h2>
+          <div class="text-xs text-gray-800 mt-2 space-y-0.5">
+            <p><strong>CNPJ:</strong> 65.434.846/0001-85</p>
+            <p><strong>(44) 9 9727-9960</strong></p>
+            <p>
+              <strong>Cidade:</strong> Campo Mourão <strong>Bairro:</strong> Rua
+              Princesa dos Campos
+            </p>
+            <p>
+              <strong>Estado:</strong> Paraná <strong>CEP:</strong> 87310-094
+            </p>
+          </div>
+        </div>
+        <div class="text-right pb-1">
+          <p class="text-sm text-gray-800">
+            <strong>Cliente:</strong> <span id="pdf-rec-cliente">--</span>
+          </p>
+          <p class="text-sm text-gray-800 mt-1">
+            <strong>Contato:</strong> <span id="pdf-rec-tel">--</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- TABELA DO RECIBO -->
+      <table class="w-full mb-3 text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-100 border-y-2 border-gray-300">
+            <th class="py-2 px-3 font-bold text-gray-900">
+              Serviços e Materiais
+            </th>
+            <th class="py-2 px-3 font-bold text-gray-900 text-center w-28">
+              Preço
+            </th>
+            <th class="py-2 px-3 font-bold text-gray-900 text-center w-24">
+              Quantidade
+            </th>
+            <th class="py-2 px-3 font-bold text-gray-900 text-right w-32">
+              Valor
+            </th>
+          </tr>
+        </thead>
+        <tbody
+          id="pdf-rec-tabela-body"
+          class="text-gray-800 border-b border-gray-200"
+        ></tbody>
+      </table>
+
+      <!-- TOTAIS -->
+      <div class="flex justify-end mb-4 break-inside-avoid">
+        <div class="w-[50%] max-w-sm">
+          <div
+            class="flex justify-between py-1 text-sm font-bold text-gray-800 px-3"
+          >
+            <span>TOTAL SERVIÇOS</span>
+            <span id="pdf-rec-total-servicos">R$ 0,00</span>
+          </div>
+          <div
+            class="flex justify-between py-1 text-sm font-bold text-gray-800 px-3"
+          >
+            <span>TOTAL</span> <span id="pdf-rec-total">R$ 0,00</span>
+          </div>
+          <div
+            class="flex justify-between py-2 text-sm font-bold bg-gray-100 px-3 mt-1"
+          >
+            <span>Preço Final</span>
+            <span id="pdf-rec-preco-final">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR CODE PIX -->
+      <div class="flex justify-end mb-4 break-inside-avoid px-3">
+        <div class="text-center">
+          <img
+            src="img/qrcode-pix.png"
+            onerror="
+              this.onerror = null;
+              this.src =
+                'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23ffffff%22 stroke=%22%23cccccc%22 stroke-width=%222%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23000000%22 font-family=%22sans-serif%22 font-size=%2214%22 font-weight=%22bold%22%3EQR PIX%3C/text%3E%3C/svg%3E';
+            "
+            class="w-20 h-20 object-contain mx-auto mb-1 border border-gray-200 p-1 rounded"
+          />
+          <p class="text-[10px] font-medium text-gray-600">Pague com Pix</p>
+        </div>
+      </div>
+
+      <!-- TERMO E ASSINATURA DO TÉCNICO -->
+      <div class="break-inside-avoid mt-2">
+        <p class="text-sm font-bold text-gray-900 mb-3" id="pdf-rec-obs">
+          Garantia da mão de obra: 90 dias
+        </p>
+        <h3 class="text-sm font-bold text-gray-900 mb-1">Declaração</h3>
+        <p class="text-sm text-gray-800 mb-10">
+          Declaro por meio deste documento, ter recebido a quantia de
+          <strong id="pdf-rec-valor-extenso">R$ 0,00</strong> via PIX.
+        </p>
+
+        <div class="text-center w-[60%] mx-auto relative mt-12">
+          <!-- O espaço acima com mt-12 foi deixado em branco para a assinatura física -->
+          <div class="border-t border-gray-800 pt-2">
+            <p class="text-sm font-bold text-gray-900">
+              Assinatura Barbosa assistência técnica
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -652,18 +833,19 @@ Garantia de 90 dias conforme CDC.</textarea
     <!-- ========================================== -->
     <script>
       /**
-       * 1. CONFIGURAÇÕES
+       * 1. CONFIGURAÇÕES GERAIS
        */
       const CONFIG = {
         STORAGE: {
           CATALOG: "barbosa_catalogo",
           HISTORY: "barbosa_historico",
           ID: "barbosa_orcamento_id",
+          DRAFT: "barbosa_rascunho",
         },
         BUSINESS: {
           OWNER_NAME: "Anderson Dias de Oliveira",
           PIX_NAME: "Anderson Dias de Oliveira",
-          PIX_BANK: "Stone", // Atualizado para Stone
+          PIX_BANK: "Stone",
           MAX_HISTORY_ITEMS: 50,
           DEFAULT_OBS: "Garantia de 90 dias conforme CDC.",
         },
@@ -685,10 +867,8 @@ Garantia de 90 dias conforme CDC.</textarea
         },
         id: (id) => `#${String(id).padStart(4, "0")}`,
         parseMoedaInput: (val) => parseFloat(val.replace(",", ".")) || 0,
-        generateAutoNF: () => {
-          // Gera uma Nota Fiscal aleatória de 6 dígitos toda vez
-          return Math.floor(100000 + Math.random() * 900000).toString();
-        },
+        generateAutoNF: () =>
+          Math.floor(100000 + Math.random() * 900000).toString(),
       };
 
       /**
@@ -709,7 +889,7 @@ Garantia de 90 dias conforme CDC.</textarea
        * 4. ESTADO DA APLICAÇÃO
        */
       const State = {
-        items: [],
+        items: StorageManager.get(CONFIG.STORAGE.DRAFT, { itens: [] }).itens,
         catalog: StorageManager.get(CONFIG.STORAGE.CATALOG, []),
         history: StorageManager.get(CONFIG.STORAGE.HISTORY, []),
         currentId: StorageManager.get(CONFIG.STORAGE.ID, 1),
@@ -798,19 +978,36 @@ Garantia de 90 dias conforme CDC.</textarea
         },
 
         init() {
-          this.elements.dateInput.valueAsDate = new Date();
-          this.elements.nfInput.value = Formatters.generateAutoNF(); // NF Gerada automaticamente
+          const draft = StorageManager.get(CONFIG.STORAGE.DRAFT, null);
+
+          if (draft) {
+            document.getElementById("input-cliente-nome").value =
+              draft.cliente || "";
+            document.getElementById("input-cliente-tel").value =
+              draft.telefone || "";
+            document.getElementById("input-data").value = draft.data || "";
+            document.getElementById("input-nf").value = draft.nf || "";
+            document.getElementById("input-mao-obra").value =
+              draft.maoObra || "";
+            document.getElementById("input-obs").value =
+              draft.obs || CONFIG.BUSINESS.DEFAULT_OBS;
+          } else {
+            this.elements.dateInput.valueAsDate = new Date();
+            this.elements.nfInput.value = Formatters.generateAutoNF();
+            document.getElementById("input-obs").value =
+              CONFIG.BUSINESS.DEFAULT_OBS;
+          }
+
           this.updateVisorId();
           this.renderCatalog();
           this.renderHistory();
+          this.renderItems();
           this.setupBusinessData();
         },
 
         setupBusinessData() {
-          document.getElementById("pdf-pix-name").innerText =
+          document.getElementById("pdf-orc-pix-name").innerText =
             `Nome: ${CONFIG.BUSINESS.PIX_NAME}`;
-          document.getElementById("input-obs").value =
-            CONFIG.BUSINESS.DEFAULT_OBS;
         },
 
         updateVisorId() {
@@ -867,7 +1064,6 @@ Garantia de 90 dias conforme CDC.</textarea
           }
 
           State.catalog.forEach((c) => {
-            // Preenche o Modal de Gerenciamento
             const liGerenciar = document.createElement("li");
             liGerenciar.className =
               "py-2 flex justify-between items-center text-sm";
@@ -877,7 +1073,6 @@ Garantia de 90 dias conforme CDC.</textarea
             `;
             this.elements.listaCatalogoModal.appendChild(liGerenciar);
 
-            // Preenche o Modal de Seleção (Telinha Flutuante)
             const liPicker = document.createElement("li");
             liPicker.className =
               "py-3 px-2 flex justify-between items-center hover:bg-blue-50 cursor-pointer rounded transition border-b border-gray-100 last:border-0";
@@ -903,7 +1098,7 @@ Garantia de 90 dias conforme CDC.</textarea
 
           if (State.history.length === 0) {
             this.elements.listaHistoricoModal.innerHTML =
-              '<li class="text-gray-400 text-sm italic py-4 text-center">Nenhum orçamento gerado ainda.</li>';
+              '<li class="text-gray-400 text-sm italic py-4 text-center">Nenhum documento gerado ainda.</li>';
             return;
           }
 
@@ -924,18 +1119,30 @@ Garantia de 90 dias conforme CDC.</textarea
                 <span class="font-bold text-gray-700">${Formatters.currency(orc.totalGeral)}</span>
               </div>
               <div class="flex gap-2 mt-2">
-                <button class="btn-regerar-pdf flex-1 bg-red-50 text-red-700 text-xs font-bold py-2 rounded flex justify-center gap-1 hover:bg-red-100 border border-red-200" data-id="${orc.id}">
-                  Baixar PDF Novamente
+                <button class="btn-regerar-orc flex-1 bg-blue-50 text-blue-700 text-xs font-bold py-2 rounded flex justify-center gap-1 hover:bg-blue-100 border border-blue-200" data-id="${orc.id}">
+                  Orçamento
+                </button>
+                <button class="btn-regerar-rec flex-1 bg-green-50 text-green-700 text-xs font-bold py-2 rounded flex justify-center gap-1 hover:bg-green-100 border border-green-200" data-id="${orc.id}">
+                  Recibo
                 </button>
               </div>
             `;
             this.elements.listaHistoricoModal.appendChild(li);
           });
 
-          document.querySelectorAll(".btn-regerar-pdf").forEach((btn) => {
+          document.querySelectorAll(".btn-regerar-orc").forEach((btn) => {
             btn.addEventListener("click", (e) =>
               PDFService.generateFromHistory(
                 Number(e.currentTarget.dataset.id),
+                "orcamento",
+              ),
+            );
+          });
+          document.querySelectorAll(".btn-regerar-rec").forEach((btn) => {
+            btn.addEventListener("click", (e) =>
+              PDFService.generateFromHistory(
+                Number(e.currentTarget.dataset.id),
+                "recibo",
               ),
             );
           });
@@ -954,40 +1161,52 @@ Garantia de 90 dias conforme CDC.</textarea
         },
 
         resetFlow() {
-          // Limpa todos os dados para o próximo orçamento
           State.items = [];
           document.getElementById("input-cliente-nome").value = "";
           document.getElementById("input-cliente-tel").value = "";
           document.getElementById("input-mao-obra").value = "";
+          document.getElementById("input-obs").value =
+            CONFIG.BUSINESS.DEFAULT_OBS;
           this.elements.nfInput.value = Formatters.generateAutoNF();
+          this.elements.dateInput.valueAsDate = new Date();
           this.clearItemInputs();
           this.renderItems();
+
+          StorageManager.set(CONFIG.STORAGE.DRAFT, null);
         },
       };
 
       /**
-       * 6. SERVIÇO DE PDF
+       * 6. SERVIÇO DE PDF (Orçamentos e Recibos)
        */
       const PDFService = {
-        injectDataToTemplate(data) {
-          document.getElementById("pdf-id").innerText = Formatters.id(data.id);
-          document.getElementById("pdf-cliente").innerText = data.cliente;
-          document.getElementById("pdf-cliente-contato-nome").innerText =
+        // --- MOTOR 1: Injeta Dados no HTML do Orçamento ---
+        injectDataToOrcamentoTemplate(data) {
+          document.getElementById("pdf-orc-id").innerText = Formatters.id(
+            data.id,
+          );
+          document.getElementById("pdf-orc-cliente").innerText = data.cliente;
+          document.getElementById("pdf-orc-cliente-contato-nome").innerText =
             data.cliente;
-          document.getElementById("pdf-cliente-tel").innerText = data.telefone;
-          document.getElementById("pdf-assinatura-nome").innerText =
+          document.getElementById("pdf-orc-cliente-tel").innerText =
+            data.telefone;
+          document.getElementById("pdf-orc-assinatura-nome").innerText =
             data.cliente.toUpperCase();
-          document.getElementById("pdf-data").innerText = Formatters.date(
+          document.getElementById("pdf-orc-data").innerText = Formatters.date(
             data.data,
           );
-          document.getElementById("pdf-mao-obra").innerText =
+          document.getElementById("pdf-orc-mao-obra").innerText =
             Formatters.currency(data.maoObra);
-          document.getElementById("pdf-total-geral").innerText =
+          document.getElementById("pdf-orc-total-geral").innerText =
             Formatters.currency(data.totalGeral);
-          document.getElementById("pdf-obs").innerText = data.obs;
-          document.getElementById("pdf-nf").innerText = data.nf;
+          document.getElementById("pdf-orc-obs").innerText = data.obs;
+          document.getElementById("pdf-orc-nf").innerText = data.nf;
 
-          const tbody = document.getElementById("pdf-tabela-body");
+          const nfContainer = document.getElementById("pdf-orc-nf-container");
+          if (data.nf) nfContainer.classList.remove("hidden");
+          else nfContainer.classList.add("hidden");
+
+          const tbody = document.getElementById("pdf-orc-tabela-body");
           tbody.innerHTML = "";
           data.itens.forEach((item, index) => {
             const tr = document.createElement("tr");
@@ -1004,17 +1223,78 @@ Garantia de 90 dias conforme CDC.</textarea
           });
         },
 
-        executePDFGeneration(fileName) {
-          // CORREÇÃO: Sobe a tela para o topo antes de tirar a "foto" para evitar cortes no PC/iPhone
+        // --- MOTOR 2: Injeta Dados no HTML do Recibo Oficial ---
+        injectDataToReciboTemplate(data) {
+          document.getElementById("pdf-rec-id").innerText = Formatters.id(
+            data.id,
+          );
+          document.getElementById("pdf-rec-data").innerText = Formatters.date(
+            data.data,
+          );
+          document.getElementById("pdf-rec-cliente").innerText =
+            data.cliente.toUpperCase();
+          document.getElementById("pdf-rec-tel").innerText = data.telefone;
+          document.getElementById("pdf-rec-obs").innerText = data.obs;
+
+          let totalServicos = 0;
+          const tbody = document.getElementById("pdf-rec-tabela-body");
+          tbody.innerHTML = "";
+
+          // Itens
+          data.itens.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.className = "break-inside-avoid";
+            tr.innerHTML = `
+              <td class="py-3 px-3 border-b border-gray-100 font-medium">${item.desc}</td>
+              <td class="py-3 px-3 border-b border-gray-100 text-center">${Formatters.currency(item.preco)}</td>
+              <td class="py-3 px-3 border-b border-gray-100 text-center">${item.qtd}</td>
+              <td class="py-3 px-3 border-b border-gray-100 text-right text-gray-900">${Formatters.currency(item.subtotal)}</td>
+            `;
+            tbody.appendChild(tr);
+            totalServicos += item.subtotal;
+          });
+
+          // Mão de obra no Recibo entra como uma linha extra de serviço
+          if (data.maoObra > 0) {
+            const tr = document.createElement("tr");
+            tr.className = "break-inside-avoid";
+            tr.innerHTML = `
+              <td class="py-3 px-3 border-b border-gray-100 font-medium">Mão de Obra / Deslocamento</td>
+              <td class="py-3 px-3 border-b border-gray-100 text-center">${Formatters.currency(data.maoObra)}</td>
+              <td class="py-3 px-3 border-b border-gray-100 text-center">1</td>
+              <td class="py-3 px-3 border-b border-gray-100 text-right text-gray-900">${Formatters.currency(data.maoObra)}</td>
+            `;
+            tbody.appendChild(tr);
+            totalServicos += data.maoObra;
+          }
+
+          document.getElementById("pdf-rec-total-servicos").innerText =
+            Formatters.currency(totalServicos);
+          document.getElementById("pdf-rec-total").innerText =
+            Formatters.currency(data.totalGeral);
+          document.getElementById("pdf-rec-preco-final").innerText =
+            Formatters.currency(data.totalGeral);
+          document.getElementById("pdf-rec-valor-extenso").innerText =
+            Formatters.currency(data.totalGeral);
+        },
+
+        executePDFGeneration(fileName, type) {
           window.scrollTo(0, 0);
 
-          const element = document.getElementById("pdf-template");
+          const elementId =
+            type === "orcamento"
+              ? "pdf-template-orcamento"
+              : "pdf-template-recibo";
+          const element = document.getElementById(elementId);
+
+          document.body.classList.add(`pdf-mode-${type}`);
           document.body.classList.add("pdf-mode");
 
+          // Ajuste fino na margem (10mm em vez de 15mm) para garantir que caberá em uma única página na maioria dos casos
           const opt = {
-            margin: [15, 0, 15, 0],
+            margin: [10, 0, 10, 0],
             filename: fileName,
-            image: { type: "jpeg", quality: 0.98 },
+            image: { type: "jpeg", quality: 1 },
             html2canvas: {
               scale: 2,
               useCORS: true,
@@ -1031,6 +1311,7 @@ Garantia de 90 dias conforme CDC.</textarea
             .from(element)
             .save()
             .then(() => {
+              document.body.classList.remove(`pdf-mode-${type}`);
               document.body.classList.remove("pdf-mode");
             });
         },
@@ -1038,6 +1319,10 @@ Garantia de 90 dias conforme CDC.</textarea
         generateCurrent() {
           if (State.items.length === 0)
             return alert("Adicione pelo menos um serviço.");
+
+          const docType = document.querySelector(
+            'input[name="doc_type"]:checked',
+          ).value;
 
           const cliente =
             document.getElementById("input-cliente-nome").value ||
@@ -1052,7 +1337,7 @@ Garantia de 90 dias conforme CDC.</textarea
           const obs = document.getElementById("input-obs").value;
           const nf = document.getElementById("input-nf").value.trim();
 
-          this.injectDataToTemplate({
+          const documentData = {
             id: State.currentId,
             cliente,
             telefone,
@@ -1062,23 +1347,43 @@ Garantia de 90 dias conforme CDC.</textarea
             maoObra,
             totalGeral: State.totalGeral,
             obs,
-          });
+          };
+
+          if (docType === "orcamento") {
+            this.injectDataToOrcamentoTemplate(documentData);
+            this.executePDFGeneration(
+              `Orcamento_${cliente.replace(/\s+/g, "_")}.pdf`,
+              "orcamento",
+            );
+          } else {
+            this.injectDataToReciboTemplate(documentData);
+            this.executePDFGeneration(
+              `Recibo_${cliente.replace(/\s+/g, "_")}.pdf`,
+              "recibo",
+            );
+          }
 
           App.saveCurrentToHistory(cliente, telefone, data, maoObra, obs, nf);
-          this.executePDFGeneration(
-            `Orcamento_${cliente.replace(/\s+/g, "_")}.pdf`,
-          );
           App.finishWorkflow();
         },
 
-        generateFromHistory(id) {
+        generateFromHistory(id, docType) {
           const orc = State.history.find((h) => h.id === id);
           if (!orc) return;
 
-          this.injectDataToTemplate(orc);
-          this.executePDFGeneration(
-            `Orcamento_${orc.cliente.replace(/\s+/g, "_")}_${Formatters.id(orc.id)}.pdf`,
-          );
+          if (docType === "orcamento") {
+            this.injectDataToOrcamentoTemplate(orc);
+            this.executePDFGeneration(
+              `Orcamento_${orc.cliente.replace(/\s+/g, "_")}_${Formatters.id(orc.id)}.pdf`,
+              "orcamento",
+            );
+          } else {
+            this.injectDataToReciboTemplate(orc);
+            this.executePDFGeneration(
+              `Recibo_${orc.cliente.replace(/\s+/g, "_")}_${Formatters.id(orc.id)}.pdf`,
+              "recibo",
+            );
+          }
         },
       };
 
@@ -1089,6 +1394,12 @@ Garantia de 90 dias conforme CDC.</textarea
         sendCurrent() {
           if (State.items.length === 0)
             return alert("Adicione pelo menos um serviço.");
+
+          const docType = document.querySelector(
+            'input[name="doc_type"]:checked',
+          ).value;
+          const title =
+            docType === "orcamento" ? "*🛠️ ORÇAMENTO*" : "*🧾 RECIBO OFICIAL*";
 
           const cliente =
             document.getElementById("input-cliente-nome").value || "Cliente";
@@ -1102,7 +1413,7 @@ Garantia de 90 dias conforme CDC.</textarea
           const obs = document.getElementById("input-obs").value;
           const nf = document.getElementById("input-nf").value.trim();
 
-          let msg = `*🛠️ ORÇAMENTO ${Formatters.id(State.currentId)} - Barbosa Assistência*\n`;
+          let msg = `${title} ${Formatters.id(State.currentId)} - Barbosa Assistência\n`;
           msg += `Cliente: ${cliente}\n`;
           if (nf) msg += `Nota Fiscal: ${nf}\n`;
           msg += `\n*Serviços:*\n`;
@@ -1116,7 +1427,13 @@ Garantia de 90 dias conforme CDC.</textarea
             msg += `\n*Mão de Obra/Deslocamento:* ${Formatters.currency(maoObra)}`;
 
           msg += `\n\n💰 *TOTAL GERAL: ${Formatters.currency(State.totalGeral)}*`;
-          msg += `\n\n💳 *Pagamento PIX:*\nNome: ${CONFIG.BUSINESS.PIX_NAME}\nBanco: ${CONFIG.BUSINESS.PIX_BANK}`;
+
+          if (docType === "orcamento") {
+            msg += `\n\n💳 *Pagamento PIX:*\nNome: ${CONFIG.BUSINESS.PIX_NAME}\nBanco: ${CONFIG.BUSINESS.PIX_BANK}`;
+          } else {
+            msg += `\n\n_Declaro ter recebido o valor descrito acima._`;
+          }
+
           msg += `\n\n_Qualquer dúvida, estou à disposição!_`;
 
           App.saveCurrentToHistory(cliente, telefone, data, maoObra, obs, nf);
@@ -1176,6 +1493,33 @@ Garantia de 90 dias conforme CDC.</textarea
           document
             .getElementById("input-mao-obra")
             .addEventListener("input", () => UI.updateTotals());
+
+          const inputsToWatch = [
+            "input-cliente-nome",
+            "input-cliente-tel",
+            "input-data",
+            "input-nf",
+            "input-mao-obra",
+            "input-obs",
+          ];
+          inputsToWatch.forEach((id) => {
+            document
+              .getElementById(id)
+              .addEventListener("input", () => this.saveDraft());
+          });
+        },
+
+        saveDraft() {
+          const draftData = {
+            cliente: document.getElementById("input-cliente-nome").value,
+            telefone: document.getElementById("input-cliente-tel").value,
+            data: document.getElementById("input-data").value,
+            nf: document.getElementById("input-nf").value,
+            maoObra: document.getElementById("input-mao-obra").value,
+            obs: document.getElementById("input-obs").value,
+            itens: State.items,
+          };
+          StorageManager.set(CONFIG.STORAGE.DRAFT, draftData);
         },
 
         addItem() {
@@ -1193,11 +1537,13 @@ Garantia de 90 dias conforme CDC.</textarea
           State.addItem(desc, qtd, preco);
           UI.clearItemInputs();
           UI.renderItems();
+          this.saveDraft();
         },
 
         removeItem(id) {
           State.removeItem(id);
           UI.renderItems();
+          this.saveDraft();
         },
 
         saveCatalogItem() {
@@ -1235,7 +1581,7 @@ Garantia de 90 dias conforme CDC.</textarea
           UI.resetFlow();
           UI.updateVisorId();
           alert(
-            "Orçamento concluído e salvo no histórico! A tela foi limpa para o próximo cliente.",
+            "Documento gerado e salvo no histórico com sucesso! A tela foi limpa para o próximo atendimento.",
           );
         },
       };
